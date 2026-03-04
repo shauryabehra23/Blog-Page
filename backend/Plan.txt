@@ -1,0 +1,26 @@
+📊 1. Blog Platform with Content Moderation
+Users can:
+
+Register/login with email
+
+Create/edit/delete their own blog posts
+
+Upload featured images for posts
+
+View other users' published posts
+
+Like/comment on posts
+
+Edit their profile with avatar
+
+Admins can:
+
+Approve/reject posts before publication
+
+Delete any post or comment
+
+Manage user roles (promote to admin/ban users)
+
+View analytics (posts per user, activity logs)
+
+Manage categories/tags

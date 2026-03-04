@@ -1,0 +1,102 @@
+.home-container {
+  min-height: 100vh;
+}
+
+.hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6rem 1rem;
+  text-align: center;
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero-content p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.hero-content .btn-primary {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: white;
+  color: #667eea;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 600;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+
+.hero-content .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.featured-section {
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+
+.featured-section h2 {
+  color: #333;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.blogs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.cta-section {
+  background: #f5f5f5;
+  padding: 4rem 1rem;
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.cta-section h2 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.cta-section p {
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.cta-section .btn-secondary {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cta-section .btn-secondary:hover {
+  background: #667eea;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+
+  .blogs-grid {
+    grid-template-columns: 1fr;
+  }
+}
