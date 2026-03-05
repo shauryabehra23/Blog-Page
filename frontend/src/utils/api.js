@@ -62,9 +62,9 @@ export const blogAPI = {
 
 // User API calls
 export const userAPI = {
-  getProfile: () => apiClient.get("/users/profile"),
-  updateProfile: (userData) => apiClient.put("/users/profile", userData),
-  getById: (id) => apiClient.get(`/users/${id}`),
+  getProfile: () => apiClient.get("/profile/my-profile"),
+  updateProfile: (userData) => apiClient.put("/profile/my-profile", userData),
+  getById: (id) => apiClient.get(`/profile/user/${id}`),
 };
 
 export default apiClient;

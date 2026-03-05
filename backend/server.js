@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const connect = require("./DB/db");
 const authApp = require("./routes/authRoutes");
+const profileApp = require("./routes/profileRoutes");
 
 const startServer = async () => {
   try {
@@ -31,6 +32,7 @@ const startServer = async () => {
     });
 
     app.use("/auth", authApp);
+    app.use("/profile", profileApp);
 
     // Global error handler
     app.use((err, req, res, next) => {

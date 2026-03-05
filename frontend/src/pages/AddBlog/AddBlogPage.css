@@ -1,5 +1,6 @@
 .addblog-container {
-  max-width: 800px;
+  max-width: 75%;
+  min-width: 95%;
   margin: 3rem auto;
   padding: 0 1rem;
 }
@@ -75,4 +76,23 @@
   background: #fed7d7;
   border-radius: 4px;
   font-size: 0.9rem;
+}
+/* Placeholder styling */
+.tiptap p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Optional: Make the list dots and headings look right if not using Tailwind Typography */
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+.tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
 }
