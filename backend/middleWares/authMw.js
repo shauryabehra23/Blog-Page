@@ -1,3 +1,5 @@
+const jwt = require("jsonwebtoken");
+
 const registerMw = (req, res, next) => {
   const { email, password } = req.body;
 
@@ -40,4 +42,41 @@ const loginMw = (req, res, next) => {
   next();
 };
 
-module.exports = { registerMw, loginMw };
+// Check if user is already logged in (for login route)
+const checkTokenMw = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.SECRET_KEY);
+      req.loggedIn = true;
+      req.user = decoded.user;
+      return next();
+    } catch (err) {
+      req.loggedIn = false;
+    }
+  }
+  req.loggedIn = false;
+  return next();
+};
+
+// Separate middleware for token-only authentication (for protected routes)
+const tokenAuthMw = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({
+      message: "No token provided",
+    });
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    req.user = decoded.user; // Attach user data to request
+    req.loggedIn = true;
+    next();
+  } catch (err) {
+    return res.status(401).json({
+      message: "Invalid or expired token",
+    });
+  }
+};
+
+module.exports = { registerMw, loginMw, tokenAuthMw, checkTokenMw };

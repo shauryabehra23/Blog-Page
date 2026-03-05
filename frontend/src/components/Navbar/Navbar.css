@@ -68,6 +68,27 @@
   background: #5a67d8;
 }
 
+.btn-logout {
+  padding: 0.5rem 1rem;
+  background: #ef5350;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-logout:hover {
+  background: #e53935;
+}
+
+.user-greeting {
+  color: #333;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
 .hamburger {
   display: none;
   flex-direction: column;
@@ -113,6 +134,14 @@
   }
 
   .btn-login {
+    display: none;
+  }
+
+  .btn-logout {
+    display: none;
+  }
+
+  .user-greeting {
     display: none;
   }
 }

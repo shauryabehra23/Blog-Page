@@ -1,12 +1,21 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import "./Navbar.css";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated, logout, user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+    navigate("/login");
   };
 
   return (
@@ -24,18 +33,31 @@ export default function Navbar() {
           <Link to="/explore" className="nav-link">
             Explore
           </Link>
-          <Link to="/add-blog" className="nav-link">
-            Write
-          </Link>
-          <Link to="/profile" className="nav-link">
-            Profile
-          </Link>
+          {isAuthenticated && (
+            <>
+              <Link to="/add-blog" className="nav-link">
+                Write
+              </Link>
+              <Link to="/profile" className="nav-link">
+                Profile
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="navbar-actions">
-          <Link to="/login" className="btn-login">
-            Login
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <span className="user-greeting">Hi, {user?.name || "User"}</span>
+              <button className="btn-logout" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="btn-login">
+              Login
+            </Link>
+          )}
           <button className="hamburger" onClick={toggleMenu}>
             <span></span>
             <span></span>

@@ -36,6 +36,7 @@ function App() {
               isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />
             }
           />
+          <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route
             path="/add-blog"
