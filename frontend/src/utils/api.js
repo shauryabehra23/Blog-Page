@@ -51,13 +51,10 @@ export const authAPI = {
 
 // Blog API calls
 export const blogAPI = {
-  getAll: (page = 1, limit = 10) =>
-    apiClient.get("/blogs", { params: { page, limit } }),
+  create: (blogData) => apiClient.post("/blogs/create", blogData),
+  getExplore: (page = 1, sortBy = "newest") =>
+    apiClient.get("/blogs/explore", { params: { page, sortBy } }),
   getById: (id) => apiClient.get(`/blogs/${id}`),
-  create: (blogData) => apiClient.post("/blogs", blogData),
-  update: (id, blogData) => apiClient.put(`/blogs/${id}`, blogData),
-  delete: (id) => apiClient.delete(`/blogs/${id}`),
-  search: (query) => apiClient.get("/blogs/search", { params: { q: query } }),
 };
 
 // User API calls
