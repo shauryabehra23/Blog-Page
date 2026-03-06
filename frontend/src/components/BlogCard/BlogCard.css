@@ -1,3 +1,9 @@
+.blog-card-link {
+  text-decoration: none;
+  display: block;
+  height: 100%;
+}
+
 .blog-card {
   background: white;
   border-radius: 10px;

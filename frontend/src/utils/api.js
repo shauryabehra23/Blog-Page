@@ -16,6 +16,10 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Don't set Content-Type for FormData - let the browser/axios set it with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
     return config;
   },
   (error) => Promise.reject(error),
@@ -62,6 +66,10 @@ export const userAPI = {
   getProfile: () => apiClient.get("/profile/my-profile"),
   updateProfile: (userData) => apiClient.put("/profile/my-profile", userData),
   getById: (id) => apiClient.get(`/profile/user/${id}`),
+  // Note: Do NOT set Content-Type header manually for FormData
+  // Axios automatically sets it with the correct boundary
+  updateProfilePic: (formData) =>
+    apiClient.post("/profile/change-profile-pic", formData),
 };
 
 export default apiClient;

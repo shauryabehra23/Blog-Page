@@ -2,6 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 40 20% 97%;
+    --foreground: 20 10% 12%;
+
+    --card: 40 25% 95%;
+    --card-foreground: 20 10% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 10% 12%;
+
+    --primary: 16 65% 48%;
+    --primary-foreground: 40 30% 96%;
+
+    --secondary: 40 20% 90%;
+    --secondary-foreground: 20 10% 20%;
+
+    --muted: 40 15% 92%;
+    --muted-foreground: 20 5% 45%;
+
+    --accent: 16 65% 48%;
+    --accent-foreground: 40 30% 96%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 30 15% 85%;
+    --input: 30 15% 85%;
+    --ring: 16 65% 48%;
+
+    --radius: 0.5rem;
+
+    --nav-bg: 20 10% 12%;
+    --nav-foreground: 40 20% 92%;
+    --comment-bg: 40 30% 96%;
+  }
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Source+Sans+3:wght@300;400;500;600&display=swap");
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
 * {
   @apply box-border;
 }
@@ -11,11 +65,7 @@ html {
 }
 
 body {
-  @apply m-0 font-sans text-base bg-white text-gray-900;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  @apply m-0 font-body text-base;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

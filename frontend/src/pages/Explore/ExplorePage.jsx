@@ -27,19 +27,31 @@ export default function ExplorePage() {
 
       const response = await blogAPI.getExplore(page, sort);
 
-      if (response.data.success) {
+      console.log("Explore API Response:", response.data);
+
+      // Handle both success and non-success responses
+      const blogsData = response.data.blogs || response.data;
+      const paginationData = response.data.pagination || {};
+
+      if (Array.isArray(blogsData)) {
         if (isLoadMore) {
-          setBlogs((prevBlogs) => [...prevBlogs, ...response.data.blogs]);
+          setBlogs((prevBlogs) => [...prevBlogs, ...blogsData]);
         } else {
-          setBlogs(response.data.blogs);
+          setBlogs(blogsData);
         }
 
-        setHasNextPage(response.data.pagination.hasNextPage);
+        setHasNextPage(paginationData.hasNextPage || false);
         setCurrentPage(page);
+      } else {
+        console.error("Unexpected response format:", response.data);
+        setError("Unexpected response format from server");
       }
     } catch (err) {
       console.error("Error fetching blogs:", err);
-      setError("Failed to load blogs. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          "Failed to load blogs. Please try again.",
+      );
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);

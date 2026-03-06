@@ -1,70 +1,62 @@
-import { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import "./Navbar.css";
 
-export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+const Navbar = () => {
   const { isAuthenticated, logout, user } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const handleLogout = () => {
-    logout();
-    setIsMenuOpen(false);
-    navigate("/login");
-  };
 
   return (
-    <nav className="navbar">
-      <div className="navbar-container">
-        <Link to="/" className="navbar-logo">
-          <span className="logo-icon">📝</span>
-          MyBlog
+    <nav className="bg-nav text-nav-foreground sticky top-0 z-50">
+      <div className="container mx-auto flex items-center justify-between h-14 px-4">
+        <Link to="/" className="font-display text-xl font-bold tracking-tight">
+          BlogSpace
         </Link>
-
-        <div className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
-          <Link to="/" className="nav-link">
-            Home
-          </Link>
-          <Link to="/explore" className="nav-link">
+        <div className="flex items-center gap-6">
+          <Link
+            to="/explore"
+            className="font-body text-sm hover:text-primary transition-colors"
+          >
             Explore
           </Link>
           {isAuthenticated && (
-            <>
-              <Link to="/add-blog" className="nav-link">
-                Write
-              </Link>
-              <Link to="/profile" className="nav-link">
-                Profile
-              </Link>
-            </>
+            <Link
+              to="/add-blog"
+              className="flex items-center gap-1.5 font-body text-sm hover:text-primary transition-colors"
+            >
+              <span>✏️</span>
+              Write
+            </Link>
           )}
-        </div>
-
-        <div className="navbar-actions">
+          <button className="hover:text-primary transition-colors">
+            <span>🔍</span>
+          </button>
           {isAuthenticated ? (
             <>
-              <span className="user-greeting">Hi, {user?.name || "User"}</span>
-              <button className="btn-logout" onClick={handleLogout}>
+              <Link
+                to="/profile"
+                className="hover:text-primary transition-colors"
+              >
+                <span>👤</span>
+              </Link>
+              <button
+                onClick={logout}
+                className="font-body text-sm hover:text-primary transition-colors"
+              >
                 Logout
               </button>
             </>
           ) : (
-            <Link to="/login" className="btn-login">
+            <Link
+              to="/login"
+              className="font-body text-sm hover:text-primary transition-colors"
+            >
               Login
             </Link>
           )}
-          <button className="hamburger" onClick={toggleMenu}>
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
         </div>
       </div>
     </nav>
   );
-}
+};
+
+export default Navbar;

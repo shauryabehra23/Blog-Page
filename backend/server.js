@@ -24,12 +24,29 @@ const startServer = async () => {
       }),
     );
 
-    app.use(express.json());
+    // Skip JSON parsing middleware for multipart/form-data requests
+    // This allows multer to handle file uploads correctly
+    const shouldParseJson = (req) => {
+      const contentType = req.headers["content-type"] || "";
+      return !contentType.includes("multipart/form-data");
+    };
 
-    // Middleware to ensure JSON responses have correct headers
+    // Custom JSON body parser that skips multipart/form-data
     app.use((req, res, next) => {
-      res.setHeader("Content-Type", "application/json");
-      next();
+      if (shouldParseJson(req)) {
+        express.json()(req, res, next);
+      } else {
+        next();
+      }
+    });
+
+    // URL-encoded parser that skips multipart/form-data
+    app.use((req, res, next) => {
+      if (shouldParseJson(req)) {
+        express.urlencoded({ extended: true })(req, res, next);
+      } else {
+        next();
+      }
     });
 
     app.use("/auth", authApp);
