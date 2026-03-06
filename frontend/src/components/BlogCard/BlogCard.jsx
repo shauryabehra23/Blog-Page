@@ -25,41 +25,48 @@ export default function BlogCard({ blog }) {
 
   const excerpt = stripHtml(blog.content || "").substring(0, 120) + "...";
 
+  // Get blog ID - could be _id from MongoDB or id from mock data
+  const blogId = blog._id || blog.id;
+
   return (
-    <article className="blog-card">
-      <div className="blog-card-header">
-        <h3 className="blog-title">{blog.title}</h3>
-      </div>
-
-      <div className="blog-card-content">
-        <p className="blog-excerpt">{excerpt}</p>
-
-        <div className="blog-stats">
-          <Badge variant="light" size="sm">
-            {blog.likesCount || 0} Likes
-          </Badge>
-          <Badge variant="light" size="sm">
-            {blog.views || 0} Views
-          </Badge>
-        </div>
-      </div>
-
-      <div className="blog-card-footer">
-        <div className="blog-author-info">
-          {authorId ? (
-            <Link to={`/profile/${authorId}`} className="blog-author-button">
-              {authorName}
-            </Link>
-          ) : (
-            <span className="blog-author-name">{authorName}</span>
-          )}
-          <p className="blog-date">{formatDate(blog.createdAt)}</p>
+    <Link to={`/blog/${blogId}`} className="blog-card-link">
+      <article className="blog-card">
+        <div className="blog-card-header">
+          <h3 className="blog-title">{blog.title}</h3>
         </div>
 
-        <Link to={`/blog/${blog._id}`} className="btn-read-more">
-          Read More →
-        </Link>
-      </div>
-    </article>
+        <div className="blog-card-content">
+          <p className="blog-excerpt">{excerpt}</p>
+
+          <div className="blog-stats">
+            <Badge variant="light" size="sm">
+              {blog.likesCount || 0} Likes
+            </Badge>
+            <Badge variant="light" size="sm">
+              {blog.views || 0} Views
+            </Badge>
+          </div>
+        </div>
+
+        <div className="blog-card-footer">
+          <div className="blog-author-info">
+            {authorId ? (
+              <Link
+                to={`/profile/${authorId}`}
+                className="blog-author-button"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {authorName}
+              </Link>
+            ) : (
+              <span className="blog-author-name">{authorName}</span>
+            )}
+            <p className="blog-date">{formatDate(blog.createdAt)}</p>
+          </div>
+
+          <span className="btn-read-more">Read More →</span>
+        </div>
+      </article>
+    </Link>
   );
 }

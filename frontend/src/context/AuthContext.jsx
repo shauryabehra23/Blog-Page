@@ -39,12 +39,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
   }, []);
 
+  // Update user data while preserving authentication state
+  const updateUser = useCallback((updatedUserData) => {
+    setUser((prevUser) => {
+      const newUser = { ...prevUser, ...updatedUserData };
+      localStorage.setItem("user", JSON.stringify(newUser));
+      return newUser;
+    });
+  }, []);
+
   const value = {
     user,
     isAuthenticated,
     loading,
     login,
     logout,
+    updateUser,
     setLoading,
   };
 
