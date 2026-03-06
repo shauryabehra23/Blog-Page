@@ -3,11 +3,14 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import CharacterCount from "@tiptap/extension-character-count"; // 1. Import
+import CharacterCount from "@tiptap/extension-character-count";
+import { useNavigate } from "react-router-dom";
+import { blogAPI } from "../../utils/api";
 import "./AddBlogPage.css";
 
 export default function AddBlogPage() {
-  const limit = 2000; // Define your character limit here
+  const limit = 2000;
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -17,6 +20,8 @@ export default function AddBlogPage() {
   });
 
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,7 +35,6 @@ export default function AddBlogPage() {
       Placeholder.configure({
         placeholder: "Write your story here...",
       }),
-      // 2. Configure CharacterCount
       CharacterCount.configure({
         limit: limit,
       }),
@@ -47,7 +51,7 @@ export default function AddBlogPage() {
     },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const isEditorEmpty = blogEditor?.getText().trim().length === 0;
 
@@ -57,10 +61,34 @@ export default function AddBlogPage() {
     }
 
     setError("");
-    console.log("Blog submitted:", formData);
+    setIsLoading(true);
 
-    setFormData({ title: "", content: "", category: "technology", tags: "" });
-    blogEditor.commands.setContent("");
+    try {
+      const response = await blogAPI.create(formData);
+
+      if (response.data.success) {
+        setSuccessMessage("Blog published successfully!");
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+
+        setFormData({
+          title: "",
+          content: "",
+          category: "technology",
+          tags: "",
+        });
+        blogEditor.commands.setContent("");
+      }
+    } catch (err) {
+      console.error("Error creating blog:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to create blog. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!blogEditor)
@@ -70,7 +98,6 @@ export default function AddBlogPage() {
       </p>
     );
 
-  // Calculate percentage for a progress bar (optional fun detail)
   const percentage = Math.round(
     (100 / limit) * blogEditor.storage.characterCount.characters(),
   );
@@ -85,6 +112,12 @@ export default function AddBlogPage() {
         {error && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded animate-pulse">
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded animate-pulse">
+            {successMessage}
           </div>
         )}
 
@@ -105,6 +138,7 @@ export default function AddBlogPage() {
               onChange={handleChange}
               placeholder="Enter a catchy title"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -121,6 +155,7 @@ export default function AddBlogPage() {
               name="category"
               value={formData.category}
               onChange={handleChange}
+              disabled={isLoading}
             >
               <option value="technology">Technology</option>
               <option value="lifestyle">Lifestyle</option>
@@ -143,12 +178,14 @@ export default function AddBlogPage() {
                   }
                   active={blogEditor.isActive("heading", { level: 2 })}
                   label="H2"
+                  disabled={isLoading}
                 />
                 <ToolbarButton
                   onClick={() => blogEditor.chain().focus().toggleBold().run()}
                   active={blogEditor.isActive("bold")}
                   label="B"
                   className="font-bold"
+                  disabled={isLoading}
                 />
                 <ToolbarButton
                   onClick={() =>
@@ -157,6 +194,7 @@ export default function AddBlogPage() {
                   active={blogEditor.isActive("italic")}
                   label="I"
                   className="italic"
+                  disabled={isLoading}
                 />
                 <ToolbarButton
                   onClick={() =>
@@ -165,6 +203,7 @@ export default function AddBlogPage() {
                   active={blogEditor.isActive("underline")}
                   label="U"
                   className="underline"
+                  disabled={isLoading}
                 />
                 <ToolbarButton
                   onClick={() =>
@@ -172,12 +211,12 @@ export default function AddBlogPage() {
                   }
                   active={blogEditor.isActive("bulletList")}
                   label="List"
+                  disabled={isLoading}
                 />
               </div>
 
               <EditorContent editor={blogEditor} />
 
-              {/* 3. The Counter UI */}
               <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-t border-gray-300 text-xs font-medium text-gray-500">
                 <div className="flex gap-4">
                   <span>{blogEditor.storage.characterCount.words()} words</span>
@@ -190,7 +229,6 @@ export default function AddBlogPage() {
                     characters
                   </span>
                 </div>
-                {/* Visual Progress Bar */}
                 <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all duration-300 ${percentage === 100 ? "bg-red-500" : "bg-blue-500"}`}
@@ -216,15 +254,19 @@ export default function AddBlogPage() {
               value={formData.tags}
               onChange={handleChange}
               placeholder="e.g. react, web, coding"
+              disabled={isLoading}
             />
           </div>
 
           <button
             type="submit"
             className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest rounded-lg shadow-lg transition duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={blogEditor.storage.characterCount.characters() > limit}
+            disabled={
+              blogEditor.storage.characterCount.characters() > limit ||
+              isLoading
+            }
           >
-            Publish Blog
+            {isLoading ? "Publishing..." : "Publish Blog"}
           </button>
         </form>
       </div>
@@ -232,16 +274,23 @@ export default function AddBlogPage() {
   );
 }
 
-function ToolbarButton({ onClick, active, label, className = "" }) {
+function ToolbarButton({
+  onClick,
+  active,
+  label,
+  className = "",
+  disabled = false,
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={`px-3 py-1 rounded text-sm transition-all border ${
         active
           ? "bg-blue-600 text-white border-blue-600 shadow-inner"
           : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
-      } ${className}`}
+      } ${className} disabled:opacity-50`}
     >
       {label}
     </button>
