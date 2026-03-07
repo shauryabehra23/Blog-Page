@@ -8,9 +8,9 @@ const Footer = () => {
           <div className="flex flex-col items-center md:items-start gap-2">
             <Link
               to="/"
-              className="font-display text-xl font-bold tracking-tight"
+              className="font-serif text-xl font-bold tracking-tight"
             >
-              BlogSpace
+              Quillr
             </Link>
             <p className="text-sm text-muted-foreground">
               Share your thoughts with the world
@@ -41,7 +41,7 @@ const Footer = () => {
 
         <div className="mt-8 pt-6 border-t border-border text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} BlogSpace. All rights reserved.
+            © {new Date().getFullYear()} Quillr. All rights reserved.
           </p>
         </div>
       </div>

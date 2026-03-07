@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const registerMw = (req, res, next) => {
   const { email, password } = req.body;
 
-  // Email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email)) {
     return res.status(400).json({
@@ -11,7 +10,6 @@ const registerMw = (req, res, next) => {
     });
   }
 
-  // Password validation: At least 6 characters
   if (!password || password.length < 6) {
     return res.status(400).json({
       message: "Password must be at least 6 characters long",
@@ -24,7 +22,6 @@ const registerMw = (req, res, next) => {
 const loginMw = (req, res, next) => {
   const { email, password } = req.body;
 
-  // Email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email)) {
     return res.status(400).json({
@@ -32,7 +29,6 @@ const loginMw = (req, res, next) => {
     });
   }
 
-  // Password validation: At least 6 characters
   if (!password || password.length < 6) {
     return res.status(400).json({
       message: "Password must be at least 6 characters long",
@@ -42,7 +38,6 @@ const loginMw = (req, res, next) => {
   next();
 };
 
-// Check if user is already logged in (for login route)
 const checkTokenMw = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (token) {
@@ -59,7 +54,6 @@ const checkTokenMw = (req, res, next) => {
   return next();
 };
 
-// Separate middleware for token-only authentication (for protected routes)
 const tokenAuthMw = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
@@ -69,7 +63,7 @@ const tokenAuthMw = (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
-    req.user = decoded.user; // Attach user data to request
+    req.user = decoded.user;
     req.loggedIn = true;
     next();
   } catch (err) {

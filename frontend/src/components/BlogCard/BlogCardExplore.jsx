@@ -1,9 +1,34 @@
 import { Calendar, User, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import blog1Img from "../../assets/images/blog-1.jpg";
 
-export default function BlogCard({ blog, index = 0 }) {
+export default function BlogCardExplore({ blog, index = 0 }) {
   const blogId = blog.id || blog._id;
-  
+
+  // Handle author - could be object with name or string
+  const authorName = blog.author?.name || blog.author || "Unknown Author";
+
+  // Handle date - could be string or Date object
+  const formattedDate = blog.date
+    ? new Date(blog.date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : blog.createdAt
+      ? new Date(blog.createdAt).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })
+      : "Unknown Date";
+
+  // Handle excerpt - could be direct field or need to extract from content
+  const excerpt = blog.excerpt || "";
+
+  // Handle image - use placeholder if not available
+  const image = blog.image || blog1Img;
+
   return (
     <Link
       to={`/blog/${blogId}`}
@@ -12,7 +37,7 @@ export default function BlogCard({ blog, index = 0 }) {
     >
       <div className="relative overflow-hidden aspect-[16/10]">
         <img
-          src={blog.image}
+          src={image}
           alt={blog.title}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
@@ -25,18 +50,18 @@ export default function BlogCard({ blog, index = 0 }) {
         </h3>
 
         <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
-          {blog.excerpt}
+          {excerpt}
         </p>
 
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <User size={13} />
-              {blog.author}
+              {authorName}
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar size={13} />
-              {blog.date}
+              {formattedDate}
             </span>
           </div>
 
