@@ -3,25 +3,22 @@ const UserModel = require("../models/User");
 
 const uploadToCDN = async (filePath, userId) => {
   try {
-    // 1. Upload to Cloudinary (AWAIT here)
     const result = await cloudinary.uploader.upload(filePath, {
-      folder: `users/${userId}/`,
-      public_id: "profilePic", // Note: public_id, not publicId
-      overwrite: true,
-      transformation: [{ width: 200, height: 200, crop: "fill" }],
+      folder: "blog-app/users",
+      public_id: `profile-${userId}-${Date.now()}`,
+      overwrite: false,
+      transformation: [{ width: 500, height: 500, crop: "fill" }],
     });
 
-    // 2. Update user in database (AWAIT here)
-    const user = await UserModel.findOneAndUpdate(
-      { _id: userId },
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
       {
-        profilePic: result.secure_url, // Use secure_url for HTTPS
+        profilePic: result.secure_url,
         cloudinaryId: result.public_id,
       },
-      { new: true }, // Return the updated document
+      { new: true },
     );
 
-    // 3. Check if user was found
     if (!user) {
       return {
         success: false,
@@ -29,7 +26,6 @@ const uploadToCDN = async (filePath, userId) => {
       };
     }
 
-    // 4. Return success with user data
     return {
       success: true,
       user: user,
@@ -38,7 +34,6 @@ const uploadToCDN = async (filePath, userId) => {
   } catch (error) {
     console.error("Upload to CDN failed:", error);
 
-    // Return detailed error for controller to handle
     return {
       success: false,
       error: error.message || "Upload failed",

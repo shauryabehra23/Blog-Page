@@ -9,13 +9,9 @@ const {
 } = require("../controllers/ProfileControllers");
 const upload = require("../config/multer");
 
-// app.post("/register", registerMw, registerCon);
-// app.post("/login", loginMw, loginCon);
-
 app.get("/user/:id", getUserProfile);
 app.get("/my-profile", tokenAuthMw, getMyProfile);
 
-// Route for changing profile picture
 app.post(
   "/change-profile-pic",
   tokenAuthMw,

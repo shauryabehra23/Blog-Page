@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Select, Loader, Button } from "@mantine/core";
-import BlogCard from "../../components/BlogCard/BlogCard";
+import BlogCardExplore from "../../components/BlogCard/BlogCardExplore";
 import { blogAPI } from "../../utils/api";
 import "./ExplorePage.css";
 
@@ -140,7 +140,7 @@ export default function ExplorePage() {
         <>
           <div className="blogs-grid">
             {filteredBlogs.map((blog) => (
-              <BlogCard key={blog._id} blog={blog} />
+              <BlogCardExplore key={blog._id} blog={blog} index={0} />
             ))}
           </div>
 

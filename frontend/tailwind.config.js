@@ -13,8 +13,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['"Playfair Display"', "serif"],
-        body: ['"Source Sans 3"', "sans-serif"],
+        display: ['"Zilla Slab"', "serif"],
+        body: ['"Zilla Slab"', "serif"],
       },
       colors: {
         border: "hsl(var(--border))",

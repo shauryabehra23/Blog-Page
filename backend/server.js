@@ -12,7 +12,6 @@ const startServer = async () => {
     await connect();
     const app = express();
 
-    // CORS middleware - Allow frontend to communicate with backend
     app.use(
       cors({
         origin: [
@@ -24,14 +23,11 @@ const startServer = async () => {
       }),
     );
 
-    // Skip JSON parsing middleware for multipart/form-data requests
-    // This allows multer to handle file uploads correctly
     const shouldParseJson = (req) => {
       const contentType = req.headers["content-type"] || "";
       return !contentType.includes("multipart/form-data");
     };
 
-    // Custom JSON body parser that skips multipart/form-data
     app.use((req, res, next) => {
       if (shouldParseJson(req)) {
         express.json()(req, res, next);
@@ -40,7 +36,6 @@ const startServer = async () => {
       }
     });
 
-    // URL-encoded parser that skips multipart/form-data
     app.use((req, res, next) => {
       if (shouldParseJson(req)) {
         express.urlencoded({ extended: true })(req, res, next);
@@ -53,7 +48,6 @@ const startServer = async () => {
     app.use("/profile", profileApp);
     app.use("/blogs", blogApp);
 
-    // Global error handler
     app.use((err, req, res, next) => {
       console.error("Server Error:", err);
       res.status(500).json({
