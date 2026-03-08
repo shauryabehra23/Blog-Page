@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Blog = require("../models/Blog");
+const Like = require("../models/Likes");
 
 // Create a new blog - FIXED VERSION
 const createBlog = async (req, res) => {
@@ -171,6 +172,90 @@ const getBlog = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Failed to fetch blog",
+      error: error.message,
+    });
+  }
+};
+
+// Toggle like on a blog (add or remove like)
+const toggleLike = async (req, res) => {
+  try {
+    const { id: blogId } = req.params;
+    const userId = req.user._id;
+
+    // Check if blog exists
+    const blog = await Blog.findById(blogId);
+    if (!blog) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
+    }
+
+    // Check if user already liked this blog
+    const existingLike = await Like.findOne({ userId, blogId });
+
+    if (existingLike) {
+      // User already liked - remove the like (unlike)
+      await Like.findByIdAndDelete(existingLike._id);
+
+      // Decrement likesCount in blog
+      await Blog.findByIdAndUpdate(blogId, { $inc: { likesCount: -1 } });
+
+      return res.status(200).json({
+        success: true,
+        liked: false,
+        message: "Like removed successfully",
+      });
+    } else {
+      // User hasn't liked yet - add the like
+      const newLike = new Like({ userId, blogId });
+      await newLike.save();
+
+      // Increment likesCount in blog
+      await Blog.findByIdAndUpdate(blogId, { $inc: { likesCount: 1 } });
+
+      return res.status(200).json({
+        success: true,
+        liked: true,
+        message: "Like added successfully",
+      });
+    }
+  } catch (error) {
+    console.error("Error toggling like:", error);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to toggle like",
+      error: error.message,
+    });
+  }
+};
+
+// Get like status for current user on a blog
+const getLikeStatus = async (req, res) => {
+  try {
+    const { id: blogId } = req.params;
+    const userId = req.user._id;
+
+    // Check if blog exists
+    const blog = await Blog.findById(blogId);
+    if (!blog) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Blog not found" });
+    }
+
+    // Check if user has liked this blog
+    const existingLike = await Like.findOne({ userId, blogId });
+
+    return res.status(200).json({
+      success: true,
+      liked: !!existingLike,
+    });
+  } catch (error) {
+    console.error("Error getting like status:", error);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to get like status",
       error: error.message,
     });
   }
@@ -404,4 +489,11 @@ const seedBlogs = async (req, res) => {
   }
 };
 
-module.exports = { createBlog, getNextBlogs, getBlog, seedBlogs };
+module.exports = {
+  createBlog,
+  getNextBlogs,
+  getBlog,
+  seedBlogs,
+  toggleLike,
+  getLikeStatus,
+};

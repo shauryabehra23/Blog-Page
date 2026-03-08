@@ -41,6 +41,4 @@ const uploadToCDN = async (filePath, userId) => {
   }
 };
 
-const blogImageUpload = (fillePath, userId);
-
 module.exports = uploadToCDN;

@@ -1,40 +1,20 @@
-# Blog Storage Issues - Fix Plan
+# Task: Add Likes Functionality
 
-## Issues Identified:
+## Steps to Complete:
 
-### 1. ReadBlogPage.jsx - Missing Image Extension
+- [x] 1. Analyze existing codebase (Blog model, Follows model, routes, controllers)
+- [x] 2. Create Likes schema (similar to Follows)
+- [x] 3. Add backend endpoints for toggle like and get like status
+- [x] 4. Update frontend API
+- [x] 5. Update ReadBlogPage to use the endpoints
+- [x] 6. Test the implementation
 
-- Error: "Unknown node type: image"
-- Fix: Add Image extension to generateHTML extensions array ✅ FIXED
+## Notes:
 
-### 2. ReadBlogPage.jsx - Plain String Content Not Handled
-
-- Error: "Unexpected tokenhttps://re' 'h', '... is not valid JSON"
-- Fix: Handle both string and object content formats ✅ FIXED
-
-### 3. AddBlogPage.jsx - Images Not Being Uploaded to Cloudinary
-
-- Evidence: contentImages in database contains "blob:http://localhost:5173/..."
-- Root cause: Upload is failing silently or URL replacement isn't working
-- Fix: Added comprehensive logging to trace the issue
-
-## Implementation Steps:
-
-### Step 1: Fix ReadBlogPage.jsx ✅ COMPLETED
-
-- [x] Add Image extension import from @tiptap/extension-image
-- [x] Add Image extension to generateHTML extensions array
-- [x] Handle plain string content (for Postman/manual entry)
-- [x] Display string content as image if it's a URL, otherwise as plain text
-
-### Step 2: Add Logging to AddBlogPage.jsx ✅ COMPLETED
-
-- [x] Added console.log for upload responses
-- [x] Added console.log for image ID to URL mapping
-- [x] Added console.log for content replacement process
-
-### Step 3: Testing Required
-
-- [ ] Test by creating a new blog with images through the UI
-- [ ] Check browser console for upload logs
-- [ ] Verify images are stored with Cloudinary URLs in the database
+- Views are already incrementing in getBlog controller - no changes needed!
+- Likes schema uses unique compound index to prevent duplicate likes
+- Created Likes model at backend/models/Likes.js
+- Added toggleLike and getLikeStatus controllers
+- Added /:id/like and /:id/like/status routes
+- Updated frontend API with likeBlog and getLikeStatus functions
+- Updated ReadBlogPage with AuthContext and API calls

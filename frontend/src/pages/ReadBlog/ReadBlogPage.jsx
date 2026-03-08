@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
 import { blogAPI } from "../../utils/api";
+import { AuthContext } from "../../context/AuthContext";
 import { generateHTML } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -56,6 +57,7 @@ const commentsData = [
 
 const ReadBlog = () => {
   const { blogId } = useParams();
+  const { isAuthenticated } = useContext(AuthContext);
   const [blog, setBlog] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -90,6 +92,26 @@ const ReadBlog = () => {
       fetchBlog();
     }
   }, [blogId]);
+
+  // Fetch like status when blog loads and user is authenticated
+  useEffect(() => {
+    const fetchLikeStatus = async () => {
+      if (!isAuthenticated || !blogId) {
+        return;
+      }
+      try {
+        const response = await blogAPI.getLikeStatus(blogId);
+        if (response.data.success) {
+          setLiked(response.data.liked);
+        }
+      } catch (err) {
+        console.error("Error fetching like status:", err);
+        // Don't show error to user - just keep like as false
+      }
+    };
+
+    fetchLikeStatus();
+  }, [blogId, isAuthenticated]);
 
   // Convert JSON content to HTML using TipTap's generateHTML
   // Also handles plain string content (e.g., from Postman with Cloudinary URL)
@@ -213,9 +235,41 @@ const ReadBlog = () => {
     setNewComment("");
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    // If not authenticated, prompt to login (or just toggle locally for demo)
+    if (!isAuthenticated) {
+      // For non-authenticated users, just toggle locally (optional: could redirect to login)
+      setLiked(!liked);
+      setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
+      return;
+    }
+
+    // Optimistic update for better UX
+    const previousLiked = liked;
+    const previousCount = likeCount;
     setLiked(!liked);
     setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
+
+    try {
+      const response = await blogAPI.likeBlog(blogId);
+      if (response.data.success) {
+        // API call succeeded, state is already updated optimistically
+        // Optionally fetch the latest blog to get accurate count
+        const blogResponse = await blogAPI.getById(blogId);
+        if (blogResponse.data.success) {
+          setLikeCount(blogResponse.data.blog.likesCount || 0);
+        }
+      } else {
+        // Revert on failure
+        setLiked(previousLiked);
+        setLikeCount(previousCount);
+      }
+    } catch (err) {
+      console.error("Error toggling like:", err);
+      // Revert on error
+      setLiked(previousLiked);
+      setLikeCount(previousCount);
+    }
   };
 
   if (isLoading) {
