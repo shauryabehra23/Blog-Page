@@ -5,6 +5,8 @@ const {
   getNextBlogs,
   getBlog,
   seedBlogs,
+  toggleLike,
+  getLikeStatus,
 } = require("../controllers/blogControllers");
 const { checkTokenMw, tokenAuthMw } = require("../middleWares/authMw");
 const { uploadBlogImages } = require("../config/multer");
@@ -26,5 +28,11 @@ app.get("/seed", tokenAuthMw, seedBlogs);
 
 // Get a single blog by ID
 app.get("/:id", getBlog);
+
+// Toggle like on a blog (requires authentication)
+app.post("/:id/like", checkTokenMw, toggleLike);
+
+// Get like status for current user (requires authentication)
+app.get("/:id/like/status", checkTokenMw, getLikeStatus);
 
 module.exports = app;
