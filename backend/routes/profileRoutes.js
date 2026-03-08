@@ -7,7 +7,7 @@ const {
   getMyProfile,
   changeProfPic,
 } = require("../controllers/ProfileControllers");
-const upload = require("../config/multer");
+const { uploadProfile } = require("../config/multer");
 
 app.get("/user/:id", getUserProfile);
 app.get("/my-profile", tokenAuthMw, getMyProfile);
@@ -15,7 +15,7 @@ app.get("/my-profile", tokenAuthMw, getMyProfile);
 app.post(
   "/change-profile-pic",
   tokenAuthMw,
-  upload.single("profilePic"),
+  uploadProfile.single("profilePic"),
   changeProfPic,
 );
 

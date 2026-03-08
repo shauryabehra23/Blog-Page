@@ -2,7 +2,8 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("./cloudinary");
 
-const storage = new CloudinaryStorage({
+// Storage for profile images (square, 500x500)
+const profileStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "blog-app/users",
@@ -11,10 +12,40 @@ const storage = new CloudinaryStorage({
   },
 });
 
+// Storage for blog front pic (larger, 1200x630 - og:image size)
+const blogFrontPicStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "blog-app/front-pics",
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+    transformation: [{ width: 1200, height: 630, crop: "fill" }],
+  },
+});
+
+// Storage for blog content images (original size, but optimized)
+const blogContentStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "blog-app/content",
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+    transformation: [{ width: 1000, quality: "auto:good" }],
+  },
+});
+
+// Combined storage that handles multiple image types
+const blogStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "blog-app",
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+    // For front pic - use transformation; for content images - let Cloudinary auto-optimize
+  },
+});
+
 const upload = multer({
-  storage: storage,
+  storage: blogStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10MB for blog images
   },
   fileFilter: (req, file, cb) => {
     if (
@@ -35,4 +66,15 @@ const upload = multer({
   },
 });
 
-module.exports = upload;
+// Export different upload configurations
+module.exports = {
+  upload,
+  uploadProfile: multer({
+    storage: profileStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+  }),
+  uploadBlogImages: multer({
+    storage: blogStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+  }),
+};
