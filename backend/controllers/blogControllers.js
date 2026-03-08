@@ -1,11 +1,13 @@
 const User = require("../models/User");
 const Blog = require("../models/Blog");
 
-// Create a new blog
+// Create a new blog - FIXED VERSION
 const createBlog = async (req, res) => {
   try {
     const userId = req.user._id;
     const { title, content, category, tags } = req.body;
+    console.log("Received content type:", typeof content);
+    console.log("Content preview:", content?.substring?.(0, 100) || content);
 
     if (!title || !content) {
       return res
@@ -13,10 +15,51 @@ const createBlog = async (req, res) => {
         .json({ message: "Title and content are required" });
     }
 
+    // Handle uploaded file - coverImage is sent as single file
+    let frontPic = "";
+    if (req.file) {
+      // Single cover image file
+      frontPic = req.file.secure_url || req.file.path || "";
+    }
+
+    // ✅ PARSE the content from string to object!
+    // Frontend sends content as JSON.stringify(editor.getJSON())
+    let parsedContent;
+    try {
+      parsedContent =
+        typeof content === "string" ? JSON.parse(content) : content;
+      console.log("Successfully parsed content to object");
+    } catch (parseError) {
+      console.error("Error parsing content:", parseError);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid content format",
+        error: parseError.message,
+      });
+    }
+
+    // ✅ Extract image URLs from parsed content for contentImages array
+    const contentImages = [];
+    const extractImagesFromNode = (node) => {
+      if (node.type === "image" && node.attrs?.src) {
+        contentImages.push(node.attrs.src);
+      }
+      if (node.content && Array.isArray(node.content)) {
+        node.content.forEach(extractImagesFromNode);
+      }
+    };
+
+    if (parsedContent.content && Array.isArray(parsedContent.content)) {
+      parsedContent.content.forEach(extractImagesFromNode);
+    }
+
+    // Create new blog with PARSED content
     const newBlog = new Blog({
       author: userId,
       title,
-      content,
+      frontPic,
+      content: parsedContent, // 👈 Now it's an object, not a string!
+      contentImages: contentImages, // 👈 Store extracted image URLs
       category,
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
     });
@@ -92,7 +135,7 @@ const getNextBlogs = async (req, res) => {
   }
 };
 
-// Get a single blog by ID
+// Get a single blog by ID - FIXED to handle both string and object content
 const getBlog = async (req, res) => {
   try {
     const { id } = req.params;
@@ -109,6 +152,16 @@ const getBlog = async (req, res) => {
         .json({ success: false, message: "Blog not found" });
     }
 
+    // Ensure content is properly formatted for frontend
+    // If content is a string (old format), parse it
+    if (typeof blog.content === "string") {
+      try {
+        blog.content = JSON.parse(blog.content);
+      } catch (e) {
+        console.log("Content is already a string, keeping as is");
+      }
+    }
+
     return res.status(200).json({
       success: true,
       blog,
@@ -123,7 +176,7 @@ const getBlog = async (req, res) => {
   }
 };
 
-// Seed sample blogs (for testing)
+// Seed sample blogs (for testing) - FIXED to use proper format
 const seedBlogs = async (req, res) => {
   try {
     // First, check and create a demo user if it doesn't exist
@@ -137,13 +190,40 @@ const seedBlogs = async (req, res) => {
       await demoUser.save();
     }
 
-    // Sample blogs data
+    // Sample blogs data - using TipTap JSON format (as objects, not strings)
     const sampleBlogs = [
       {
         author: demoUser._id,
         title: "Getting Started with React Hooks",
-        content:
-          "<h2>Introduction to React Hooks</h2><p>React Hooks are a powerful feature that allows you to use state and other React features without writing a class component. They provide a more direct API to the React concepts you already know.</p><p>In this guide, we'll explore the useState hook and see how it can simplify your code.</p>",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Introduction to React Hooks" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "React Hooks are a powerful feature that allows you to use state and other React features without writing a class component. They provide a more direct API to the React concepts you already know.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "In this guide, we'll explore the useState hook and see how it can simplify your code.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [], // Will be populated if there were images
         category: "technology",
         tags: ["react", "javascript", "hooks"],
         likesCount: 145,
@@ -152,8 +232,35 @@ const seedBlogs = async (req, res) => {
       {
         author: demoUser._id,
         title: "The Art of Minimalist Web Design",
-        content:
-          "<h2>Less is More</h2><p>Minimalist design focuses on simplicity and functionality. By removing unnecessary elements, we create cleaner, faster, and more user-friendly interfaces.</p><p>This article explores principles of minimalist design and how to apply them to your projects.</p>",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Less is More" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Minimalist design focuses on simplicity and functionality. By removing unnecessary elements, we create cleaner, faster, and more user-friendly interfaces.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "This article explores principles of minimalist design and how to apply them to your projects.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [],
         category: "design",
         tags: ["design", "web", "ux"],
         likesCount: 203,
@@ -162,8 +269,37 @@ const seedBlogs = async (req, res) => {
       {
         author: demoUser._id,
         title: "Node.js Best Practices for Production",
-        content:
-          "<h2>Building Scalable Node Applications</h2><p>Node.js has become a popular choice for backend development. This guide covers best practices for building production-ready Node.js applications.</p><p>Topics include error handling, logging, security, and performance optimization.</p>",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Building Scalable Node Applications" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Node.js has become a popular choice for backend development. This guide covers best practices for building production-ready Node.js applications.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Topics include error handling, logging, security, and performance optimization.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [],
         category: "technology",
         tags: ["nodejs", "backend", "javascript"],
         likesCount: 178,
@@ -172,8 +308,37 @@ const seedBlogs = async (req, res) => {
       {
         author: demoUser._id,
         title: "Travel Diaries: Japan Adventure",
-        content:
-          "<h2>Exploring the Land of Cherry Blossoms</h2><p>Japan is a country where tradition meets modernity. From ancient temples to futuristic cities, there's so much to discover.</p><p>Join me as I share my experiences traveling through Tokyo, Kyoto, and beyond.</p>",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Exploring the Land of Cherry Blossoms" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Japan is a country where tradition meets modernity. From ancient temples to futuristic cities, there's so much to discover.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Join me as I share my experiences traveling through Tokyo, Kyoto, and beyond.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [],
         category: "travel",
         tags: ["japan", "adventure", "travel"],
         likesCount: 267,
@@ -182,62 +347,39 @@ const seedBlogs = async (req, res) => {
       {
         author: demoUser._id,
         title: "CSS Grid Deep Dive",
-        content:
-          "<h2>Mastering CSS Grid Layout</h2><p>CSS Grid is a powerful layout tool that allows you to create complex, responsive designs with minimal code.</p><p>This comprehensive guide covers everything from basic concepts to advanced techniques.</p>",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Mastering CSS Grid Layout" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "CSS Grid is a powerful layout tool that allows you to create complex, responsive designs with minimal code.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "This comprehensive guide covers everything from basic concepts to advanced techniques.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [],
         category: "technology",
         tags: ["css", "web", "frontend"],
         likesCount: 198,
         views: 945,
-      },
-      {
-        author: demoUser._id,
-        title: "Healthy Eating: Mediterranean Diet",
-        content:
-          "<h2>Food for Health and Happiness</h2><p>The Mediterranean diet is known for its health benefits and delicious flavors. It emphasizes fresh vegetables, whole grains, and healthy fats.</p><p>Learn about the foods that make this diet so special and how to incorporate them into your meals.</p>",
-        category: "food",
-        tags: ["health", "diet", "cooking"],
-        likesCount: 312,
-        views: 2103,
-      },
-      {
-        author: demoUser._id,
-        title: "JavaScript Async/Await Explained",
-        content:
-          "<h2>Master Asynchronous JavaScript</h2><p>Async/await is a modern way to handle asynchronous operations in JavaScript. It makes your code more readable and easier to debug.</p><p>This tutorial walks through practical examples and common pitfalls to avoid.</p>",
-        category: "technology",
-        tags: ["javascript", "async", "programming"],
-        likesCount: 234,
-        views: 1567,
-      },
-      {
-        author: demoUser._id,
-        title: "A Day in the Life of a Developer",
-        content:
-          "<h2>Inside the Developer's Mind</h2><p>Software development is a creative and challenging profession. We juggle deadlines, debugging, and continuous learning.</p><p>This article gives a peek into what a typical day looks like for many developers in the industry.</p>",
-        category: "technology",
-        tags: ["development", "career", "lifestyle"],
-        likesCount: 156,
-        views: 723,
-      },
-      {
-        author: demoUser._id,
-        title: "Exploring the Mountains",
-        content:
-          "<h2>Adventure in the Peaks</h2><p>Mountains are nature's monuments, offering breathtaking views and thrilling adventures. Whether you're hiking or mountaineering, there's something magical about reaching new heights.</p><p>Discover my favorite mountain destinations and tips for safe trekking.</p>",
-        category: "travel",
-        tags: ["mountains", "hiking", "adventure"],
-        likesCount: 289,
-        views: 1834,
-      },
-      {
-        author: demoUser._id,
-        title: "Understanding Web Performance",
-        content:
-          "<h2>Speed Matters</h2><p>Web performance directly impacts user experience and conversion rates. Modern tools and techniques allow us to measure and optimize performance effectively.</p><p>This guide covers key metrics and practical optimization strategies.</p>",
-        category: "technology",
-        tags: ["performance", "web", "optimization"],
-        likesCount: 221,
-        views: 1456,
       },
     ];
 

@@ -26,8 +26,8 @@ export default function BlogCardExplore({ blog, index = 0 }) {
   // Handle excerpt - could be direct field or need to extract from content
   const excerpt = blog.excerpt || "";
 
-  // Handle image - use placeholder if not available
-  const image = blog.image || blog1Img;
+  // Handle image - use frontPic first, then fall back to blog.image, then placeholder
+  const image = blog.frontPic || blog.image || blog1Img;
 
   return (
     <Link

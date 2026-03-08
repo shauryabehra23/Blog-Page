@@ -9,7 +9,9 @@ const BlogSchema = new mongoose.Schema(
       required: true,
     },
     title: { type: String, required: true },
+    frontPic: { type: String, default: "" }, // Front cover picture URL
     content: { type: Object }, // JSON is stored as Object in Mongoose
+    contentImages: [{ type: String }], // Array of image URLs from TipTap editor
     category: { type: String, default: "other" },
     tags: [{ type: String }],
 

@@ -7,9 +7,16 @@ const {
   seedBlogs,
 } = require("../controllers/blogControllers");
 const { checkTokenMw, tokenAuthMw } = require("../middleWares/authMw");
+const { uploadBlogImages } = require("../config/multer");
 
 // Create a new blog (requires authentication)
-app.post("/create", checkTokenMw, createBlog);
+// Accepts: coverImage (front pic), content images sent as URLs in JSON
+app.post(
+  "/create",
+  checkTokenMw,
+  uploadBlogImages.single("coverImage"),
+  createBlog,
+);
 
 // Get paginated blogs with optional sorting
 app.get("/explore", getNextBlogs);

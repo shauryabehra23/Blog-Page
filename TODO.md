@@ -1,14 +1,40 @@
-# TODO - Fix Explore Page and Profile Picture Issues
+# Blog Storage Issues - Fix Plan
 
-## Issue 1: Explore Page Not Fetching Blogs
+## Issues Identified:
 
-- [x] 1.1 Check ExplorePage.jsx for data handling issues
-- [x] 1.2 Add better error handling and logging for debugging
-- [x] 1.3 Make response handling more flexible to handle different response formats
+### 1. ReadBlogPage.jsx - Missing Image Extension
 
-## Issue 2: Profile Picture Not Updating
+- Error: "Unknown node type: image"
+- Fix: Add Image extension to generateHTML extensions array ✅ FIXED
 
-- [x] 2.1 Fix backend ProfileControllers.js - use Cloudinary storage result directly (req.file.secure_url)
-- [x] 2.2 Add updateUser function to AuthContext.jsx
-- [x] 2.3 Update ProfilePage.jsx to use context updateUser function
-- [x] 2.4 Add re-fetch user data after profile pic update in ProfilePage.jsx
+### 2. ReadBlogPage.jsx - Plain String Content Not Handled
+
+- Error: "Unexpected tokenhttps://re' 'h', '... is not valid JSON"
+- Fix: Handle both string and object content formats ✅ FIXED
+
+### 3. AddBlogPage.jsx - Images Not Being Uploaded to Cloudinary
+
+- Evidence: contentImages in database contains "blob:http://localhost:5173/..."
+- Root cause: Upload is failing silently or URL replacement isn't working
+- Fix: Added comprehensive logging to trace the issue
+
+## Implementation Steps:
+
+### Step 1: Fix ReadBlogPage.jsx ✅ COMPLETED
+
+- [x] Add Image extension import from @tiptap/extension-image
+- [x] Add Image extension to generateHTML extensions array
+- [x] Handle plain string content (for Postman/manual entry)
+- [x] Display string content as image if it's a URL, otherwise as plain text
+
+### Step 2: Add Logging to AddBlogPage.jsx ✅ COMPLETED
+
+- [x] Added console.log for upload responses
+- [x] Added console.log for image ID to URL mapping
+- [x] Added console.log for content replacement process
+
+### Step 3: Testing Required
+
+- [ ] Test by creating a new blog with images through the UI
+- [ ] Check browser console for upload logs
+- [ ] Verify images are stored with Cloudinary URLs in the database

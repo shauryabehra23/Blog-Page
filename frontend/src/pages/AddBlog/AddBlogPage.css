@@ -96,3 +96,36 @@
   font-size: 1.5rem;
   font-weight: bold;
 }
+
+/* Add these animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Ensure notifications are above everything */
+.fixed {
+  position: fixed;
+  z-index: 50;
+}
+
+/* Optional: Make notifications stack nicely */
+.fixed.bottom-4.right-4 > * + * {
+  margin-top: 0.5rem;
+}
+
+/* Optional: Add hover effect */
+.fixed.bottom-4.right-4 > div:hover {
+  transform: translateX(-4px);
+  transition: transform 0.2s ease;
+}
