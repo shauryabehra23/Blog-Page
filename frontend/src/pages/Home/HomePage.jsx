@@ -30,11 +30,11 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[93vh] flex items-center justify-center overflow-hidden">
         <img
           src={heroBg}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover "
           style={{ animation: "float 8s ease-in-out infinite" }}
         />
         <div className="absolute inset-0 bg-[hsl(var(--hero-overlay)/0.7)]" />

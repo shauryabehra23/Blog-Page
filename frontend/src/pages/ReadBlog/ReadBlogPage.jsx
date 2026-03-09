@@ -1,71 +1,30 @@
 import { useState, useEffect, useMemo, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
-import { blogAPI } from "../../utils/api";
+import { blogAPI, commentAPI } from "../../utils/api";
 import { AuthContext } from "../../context/AuthContext";
 import { generateHTML } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
-import { Clock, ChevronLeft } from "lucide-react";
+import { Clock, ChevronLeft, Eye } from "lucide-react";
 import { Badge } from "../../components/ui/badge";
 import { Heart, MessageCircle, Share2, Send, Bookmark } from "lucide-react";
 
-const commentsData = [
-  {
-    id: 1,
-    author: "Alex Rivera",
-    avatar: "AR",
-    time: "2 hours ago",
-    text: "Great article! The chaos engineering section really resonated with me. We started doing game days at our company and it's been transformative.",
-  },
-  {
-    id: 2,
-    author: "Priya Sharma",
-    avatar: "PS",
-    time: "4 hours ago",
-    text: "The human element part is so underrated. We had a major outage last year and the blameless postmortem culture saved us.",
-  },
-  {
-    id: 3,
-    author: "Jordan Lee",
-    avatar: "JL",
-    time: "6 hours ago",
-    text: "Would love to see a follow-up on specific tooling recommendations for observability. What do you use for distributed tracing?",
-  },
-  {
-    id: 4,
-    author: "Emma Watson",
-    avatar: "EW",
-    time: "1 day ago",
-    text: "Circuit breakers changed our microservices architecture completely. Highly recommend Resilience4j for JVM-based systems.",
-  },
-  {
-    id: 5,
-    author: "Marcus Cole",
-    avatar: "MC",
-    time: "1 day ago",
-    text: "Fascinating read. I'd add that contract testing between services is another crucial piece of the resilience puzzle.",
-  },
-  {
-    id: 6,
-    author: "Yuki Tanaka",
-    avatar: "YT",
-    time: "2 days ago",
-    text: "The ship bulkhead analogy is perfect. Makes it so much easier to explain to stakeholders why we need service isolation.",
-  },
-];
-
 const ReadBlog = () => {
   const { blogId } = useParams();
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, user } = useContext(AuthContext);
   const [blog, setBlog] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState(commentsData);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [views, setViews] = useState(0);
   const [saved, setSaved] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState("");
 
   // Fetch blog data by ID
   useEffect(() => {
@@ -77,6 +36,7 @@ const ReadBlog = () => {
         if (response.data.success) {
           setBlog(response.data.blog);
           setLikeCount(response.data.blog.likesCount || 0);
+          setViews(response.data.blog.views || 0);
         } else {
           setError("Blog not found");
         }
@@ -91,6 +51,27 @@ const ReadBlog = () => {
     if (blogId) {
       fetchBlog();
     }
+  }, [blogId]);
+
+  // Fetch comments when blogId changes
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!blogId) return;
+      try {
+        setCommentsLoading(true);
+        const response = await commentAPI.getByBlogId(blogId);
+        if (response.data.success) {
+          setComments(response.data.comments || []);
+        }
+      } catch (err) {
+        console.error("Error fetching comments:", err);
+        // Keep empty array on error
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+
+    fetchComments();
   }, [blogId]);
 
   // Fetch like status when blog loads and user is authenticated
@@ -220,19 +201,31 @@ const ReadBlog = () => {
       .slice(0, 2);
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    setComments([
-      {
-        id: Date.now(),
-        author: "You",
-        avatar: "YO",
-        time: "Just now",
-        text: newComment,
-      },
-      ...comments,
-    ]);
-    setNewComment("");
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !isAuthenticated) return;
+
+    setSubmitting(true);
+    setCommentError("");
+    try {
+      const response = await commentAPI.create({
+        content: newComment,
+        blogId: blogId,
+      });
+
+      if (response.data.success) {
+        // Add the new comment to the list
+        setComments([response.data.comment, ...comments]);
+        setNewComment("");
+      }
+    } catch (err) {
+      console.error("Error posting comment:", err);
+      setCommentError(
+        err.response?.data?.message ||
+          "Failed to post comment. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleLike = async () => {
@@ -395,6 +388,10 @@ const ReadBlog = () => {
 
             {/* Engagement bar */}
             <div className="flex items-center gap-5 mt-10 pt-6 border-t border-border">
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <Eye size={20} />
+                <span className="text-sm font-medium">{views}</span>
+              </span>
               <button
                 onClick={handleLike}
                 className={`flex items-center gap-2 transition-colors ${
@@ -435,52 +432,89 @@ const ReadBlog = () => {
                 className="flex-1 overflow-y-auto p-4 space-y-5"
                 style={{ maxHeight: "calc(100vh - 240px)" }}
               >
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3 group">
-                    <div className="w-9 h-9 rounded-full bg-secondary flex-shrink-0 flex items-center justify-center text-xs font-bold text-secondary-foreground">
-                      {comment.avatar}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2 mb-0.5">
-                        <span className="font-semibold text-sm text-foreground">
-                          {comment.author}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {comment.time}
-                        </span>
-                      </div>
-                      <p className="text-sm text-foreground/75 leading-relaxed">
-                        {comment.text}
-                      </p>
-                    </div>
+                {commentsLoading ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    Loading comments...
                   </div>
-                ))}
+                ) : comments.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No comments yet. Be the first to comment!
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <div key={comment._id} className="flex gap-3 group">
+                      <div className="w-9 h-9 rounded-full bg-secondary flex-shrink-0 flex items-center justify-center text-xs font-bold text-secondary-foreground">
+                        {comment.author?.profilePic ? (
+                          <img
+                            src={comment.author.profilePic}
+                            alt={comment.author.name}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        ) : (
+                          comment.author?.name?.charAt(0).toUpperCase() || "?"
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-2 mb-0.5">
+                          <span className="font-semibold text-sm text-foreground">
+                            {comment.author?.name || "Unknown"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground/75 leading-relaxed">
+                          {comment.content}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Write comment */}
               <div className="p-4 border-t border-border">
-                <div className="flex gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-xs font-bold text-primary-foreground">
-                    YO
+                {isAuthenticated ? (
+                  <div className="flex flex-col gap-2">
+                    {commentError && (
+                      <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">
+                        {commentError}
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      <div className="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-xs font-bold text-primary-foreground">
+                        {user?.name?.charAt(0).toUpperCase() || "U"}
+                      </div>
+                      <div className="flex-1 flex gap-2">
+                        <input
+                          type="text"
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleAddComment()
+                          }
+                          placeholder="Write a comment..."
+                          className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                        />
+                        <button
+                          onClick={handleAddComment}
+                          disabled={!newComment.trim() || submitting}
+                          className="bg-primary text-primary-foreground rounded-lg px-3 py-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Send size={16} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 flex gap-2">
-                    <input
-                      type="text"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
-                      placeholder="Write a comment..."
-                      className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-                    />
-                    <button
-                      onClick={handleAddComment}
-                      disabled={!newComment.trim()}
-                      className="bg-primary text-primary-foreground rounded-lg px-3 py-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Send size={16} />
-                    </button>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Please{" "}
+                    <Link to="/login" className="text-primary hover:underline">
+                      login
+                    </Link>{" "}
+                    to comment
+                  </p>
+                )}
               </div>
             </div>
           </aside>
