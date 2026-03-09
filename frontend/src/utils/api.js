@@ -63,6 +63,14 @@ export const blogAPI = {
   getLikeStatus: (id) => apiClient.get(`/blogs/${id}/like/status`),
 };
 
+// Comment API calls
+export const commentAPI = {
+  getByBlogId: (blogId) => apiClient.get(`/comments/blog/${blogId}`),
+  create: (commentData) => apiClient.post("/comments", commentData),
+  delete: (commentId) => apiClient.delete(`/comments/${commentId}`),
+  like: (commentId) => apiClient.post(`/comments/${commentId}/like`),
+};
+
 // User API calls
 export const userAPI = {
   getProfile: () => apiClient.get("/profile/my-profile"),

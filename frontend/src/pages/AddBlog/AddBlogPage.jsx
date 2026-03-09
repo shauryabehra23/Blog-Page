@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useEditor, EditorContent, Extension } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
 import StarterKit from "@tiptap/starter-kit";
@@ -7,7 +7,16 @@ import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
 import { useNavigate } from "react-router-dom";
 import { blogAPI } from "../../utils/api";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import {
+  Upload,
+  X,
+  Image as ImageIcon,
+  List,
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Heading2,
+} from "lucide-react";
 import "./AddBlogPage.css";
 
 // Custom Image extension that preserves all attributes including data-id
@@ -583,14 +592,15 @@ export default function AddBlogPage() {
                     blogEditor.chain().focus().toggleHeading({ level: 2 }).run()
                   }
                   active={blogEditor.isActive("heading", { level: 2 })}
-                  label="H2"
+                  icon={<Heading2 size={18} />}
+                  label="Heading"
                   disabled={isLoading}
                 />
                 <ToolbarButton
                   onClick={() => blogEditor.chain().focus().toggleBold().run()}
                   active={blogEditor.isActive("bold")}
-                  label="B"
-                  className="font-bold"
+                  icon={<Bold size={18} />}
+                  label="Bold"
                   disabled={isLoading}
                 />
                 <ToolbarButton
@@ -598,8 +608,8 @@ export default function AddBlogPage() {
                     blogEditor.chain().focus().toggleItalic().run()
                   }
                   active={blogEditor.isActive("italic")}
-                  label="I"
-                  className="italic"
+                  icon={<Italic size={18} />}
+                  label="Italic"
                   disabled={isLoading}
                 />
                 <ToolbarButton
@@ -607,8 +617,8 @@ export default function AddBlogPage() {
                     blogEditor.chain().focus().toggleUnderline().run()
                   }
                   active={blogEditor.isActive("underline")}
-                  label="U"
-                  className="underline"
+                  icon={<UnderlineIcon size={18} />}
+                  label="Underline"
                   disabled={isLoading}
                 />
                 <ToolbarButton
@@ -616,14 +626,16 @@ export default function AddBlogPage() {
                     blogEditor.chain().focus().toggleBulletList().run()
                   }
                   active={blogEditor.isActive("bulletList")}
-                  label="List"
+                  icon={<List size={18} />}
+                  label="Bullet List"
                   disabled={isLoading}
                 />
                 {/* Image Upload Button */}
                 <ToolbarButton
                   onClick={handleImageButtonClick}
                   active={false}
-                  label="🖼️ Image"
+                  icon={<ImageIcon size={18} />}
+                  label="Insert Image"
                   disabled={isLoading}
                   title="Click to upload images"
                 />
