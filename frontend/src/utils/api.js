@@ -36,8 +36,14 @@ apiClient.interceptors.response.use(
       message: error.message,
     });
 
-    if (error.response?.status === 401) {
+    // Handle both 401 (no/invalid token) and 400 (auth-related errors)
+    if (
+      error.response?.status === 401 ||
+      (error.response?.status === 400 &&
+        error.response?.data?.message?.includes("token"))
+    ) {
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
       window.location.href = "/login";
     }
     return Promise.reject(error);
