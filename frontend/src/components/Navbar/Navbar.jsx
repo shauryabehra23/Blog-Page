@@ -4,33 +4,36 @@ import { AuthContext } from "../../context/AuthContext";
 import { Pen, User } from "lucide-react";
 
 const Navbar = () => {
-  const { isAuthenticated, logout, user } = useContext(AuthContext);
+  const { isAuthenticated, logout } = useContext(AuthContext);
 
   return (
-    <nav className="bg-nav text-nav-foreground sticky top-0 z-50">
-      <div className="container mx-auto flex items-center justify-between h-14 px-4">
+    <nav className="bg-nav text-nav-foreground sticky top-0 z-50 border-b border-border/40 backdrop-blur">
+      <div className="container mx-auto flex items-center justify-between h-16 px-4 max-w-7xl">
+        {/* Logo - Stays consistent */}
         <Link
           to="/"
-          className="lobster-two-bold-italic text-5xl font-bold tracking-tight"
+          className="lobster-two-bold-italic text-3xl md:text-5xl font-bold tracking-tight"
         >
           Quillr
         </Link>
-        <div className="flex items-center gap-6">
+
+        {/* Navigation Links - Responsive Gap */}
+        <div className="flex items-center gap-3 md:gap-6">
           <Link
             to="/explore"
             className="font-body text-sm hover:text-primary transition-colors"
           >
             Explore
           </Link>
+
           {isAuthenticated && (
             <Link
               to="/add-blog"
               className="flex items-center gap-1.5 font-body text-sm hover:text-primary transition-colors"
             >
-              <span>
-                <Pen size={17} />
-              </span>
-              Write
+              <Pen size={17} />
+              {/* Optional: Hide text "Write" on very small screens to save space */}
+              <span className="hidden sm:inline">Write</span>
             </Link>
           )}
 
@@ -38,11 +41,9 @@ const Navbar = () => {
             <>
               <Link
                 to="/profile"
-                className="hover:text-primary transition-colors"
+                className="hover:text-primary transition-colors flex items-center"
               >
-                <span>
-                  <User />
-                </span>
+                <User size={20} />
               </Link>
               <button
                 onClick={logout}
