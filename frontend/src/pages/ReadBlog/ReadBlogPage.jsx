@@ -378,7 +378,7 @@ const ReadBlog = () => {
             </div>
 
             {/* Content - Render JSON as HTML */}
-            <div className="prose max-w-none">
+            <div className="prose [&_img]:!w-full [&_img]:!max-h-[40vh] [&_img]:!object-contain [&_img]:!bg-gray-400 [&_img]:!rounded-md">
               {contentHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
               ) : (

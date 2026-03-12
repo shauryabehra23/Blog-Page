@@ -40,18 +40,21 @@ const loginMw = (req, res, next) => {
 
 const checkTokenMw = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, process.env.SECRET_KEY);
-      req.loggedIn = true;
-      req.user = decoded.user;
-      return next();
-    } catch (err) {
-      req.loggedIn = false;
-    }
+  if (!token) {
+    req.loggedIn = false;
+    return next();
   }
-  req.loggedIn = false;
-  return next();
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    req.user = decoded.user;
+    req.loggedIn = true;
+    return next();
+  } catch (err) {
+    req.loggedIn = false;
+    return res.status(401).json({
+      message: "Invalid or expired token",
+    });
+  }
 };
 
 const tokenAuthMw = (req, res, next) => {
