@@ -11,7 +11,6 @@ const UserSchema = new mongoose.Schema(
         "https://res.cloudinary.com/demo/image/upload/default-avatar.png",
     },
     cloudinaryId: { type: String },
-
     // Summary metrics for fast UI rendering
     followerCount: { type: Number, default: 0 },
     followingCount: { type: Number, default: 0 },

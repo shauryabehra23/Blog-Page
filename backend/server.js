@@ -8,6 +8,7 @@ const profileRoutes = require("./routes/profileRoutes");
 const blogRoutes = require("./routes/blogRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const commentRoutes = require("./routes/commentRoutes");
+const collaboratorRoutes = require("./routes/collaboratorRoutes");
 
 const startServer = async () => {
   try {
@@ -39,6 +40,7 @@ const startServer = async () => {
     app.use("/profile", profileRoutes); // Mix of JSON and files
     app.use("/blogs", blogRoutes); // Mix of JSON and files
     app.use("/upload", uploadRoutes); // Only files (multer)
+    app.use("/collaborator", collaboratorRoutes);
     app.use("/comments", commentRoutes); // Comment endpoints
 
     // ✅ 404 handler for undefined routes

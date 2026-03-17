@@ -26,7 +26,6 @@ export default function ProfilePage() {
           response = await userAPI.getById(userId);
         }
         setUser(response.data);
-        console.log(user.profilePic);
       } catch (err) {
         console.error("Error fetching profile:", err);
         setError(err.response?.data?.message || "Failed to load profile");

@@ -24,10 +24,12 @@ const CustomImage = Image.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
-      // Allow any additional attributes
       "data-id": {
         default: null,
-        parseHTML: (element) => element.getAttribute("data-id"),
+        parseHTML: (element) => {
+          const id = element.getAttribute("data-id");
+          return id;
+        },
         renderHTML: (attributes) => {
           if (!attributes["data-id"]) return {};
           return { "data-id": attributes["data-id"] };
@@ -47,6 +49,7 @@ export default function AddBlogPage() {
     content: "",
     category: "technology",
     tags: "",
+    collaboratorEmails: "",
   });
 
   const [frontPic, setFrontPic] = useState(null);
@@ -55,8 +58,6 @@ export default function AddBlogPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [uploadingImages, setUploadingImages] = useState(false);
-
-  // Track pending images that need to be uploaded to Cloudinary
   const [pendingImages, setPendingImages] = useState([]);
 
   const handleChange = (e) => {
@@ -64,7 +65,6 @@ export default function AddBlogPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle front pic selection
   const handleFrontPicChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -74,7 +74,6 @@ export default function AddBlogPage() {
     }
   };
 
-  // Remove front pic
   const handleRemoveFrontPic = () => {
     setFrontPic(null);
     if (frontPicPreview) {
@@ -86,8 +85,6 @@ export default function AddBlogPage() {
     }
   };
 
-  // Image upload handler
-  // Image upload handler - UPDATED to use secure_url
   const uploadImage = async (file) => {
     try {
       const formData = new FormData();
@@ -105,23 +102,18 @@ export default function AddBlogPage() {
       );
 
       const data = await response.json();
-      console.log("Upload response:", data);
 
       if (data.success) {
-        // ✅ Use secure_url for HTTPS URL!
         const secureUrl = data.secure_url || data.url;
-        console.log("Uploaded image URL:", secureUrl);
         return secureUrl;
       } else {
         throw new Error(data.error || data.message || "Upload failed");
       }
     } catch (error) {
-      console.error("Upload error:", error);
       throw error;
     }
   };
-  // Handle image upload (paste, drop, or button click)
-  // Images are stored temporarily with blob URLs, then uploaded on submit
+
   const handleImageUpload = async (file) => {
     if (!file.type.startsWith("image/")) {
       setError("Please select an image file");
@@ -129,22 +121,19 @@ export default function AddBlogPage() {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      // 5MB limit
       setError("Image size should be less than 5MB");
       return;
     }
 
     try {
-      // Create local URL for instant display
       const localUrl = URL.createObjectURL(file);
-
-      // Generate unique ID to track this image
       const imageId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Store in pending images for upload on submit
-      setPendingImages((prev) => [...prev, { id: imageId, file, localUrl }]);
+      setPendingImages((prev) => {
+        const updated = [...prev, { id: imageId, file, localUrl }];
+        return updated;
+      });
 
-      // Insert image with local URL and store the ID in data-id attribute
       blogEditor
         .chain()
         .focus()
@@ -152,11 +141,11 @@ export default function AddBlogPage() {
           src: localUrl,
           alt: file.name || "Image",
           title: file.name || "Image",
-          "data-id": imageId, // Store ID for replacement later
+          "data-id": imageId,
         })
         .run();
     } catch (error) {
-      console.error("Image add failed:", error);
+      // Error handling without logs
     }
   };
 
@@ -166,7 +155,7 @@ export default function AddBlogPage() {
       Underline,
       CustomImage.configure({
         inline: true,
-        allowBase64: true, // Allow base64 for copy-paste
+        allowBase64: true,
         HTMLAttributes: {
           class: "blog-image",
           loading: "lazy",
@@ -186,7 +175,6 @@ export default function AddBlogPage() {
           "prose prose-sm sm:prose lg:prose-lg focus:outline-none min-h-[300px] p-4 max-w-none",
       },
       handlePaste: (view, event) => {
-        // Handle image paste
         const items = Array.from(event.clipboardData?.items || []);
         const imageItems = items.filter(
           (item) => item.type.indexOf("image") === 0,
@@ -194,19 +182,15 @@ export default function AddBlogPage() {
 
         if (imageItems.length > 0) {
           event.preventDefault();
-
           imageItems.forEach(async (item) => {
             const file = item.getAsFile();
             await handleImageUpload(file);
           });
-
           return true;
         }
         return false;
       },
       handleDrop: async (view, event) => {
-        // ✅ Make the function async
-        // Handle image drop
         const files = Array.from(event.dataTransfer?.files || []);
         const imageFiles = files.filter(
           (file) => file.type.indexOf("image") === 0,
@@ -215,28 +199,22 @@ export default function AddBlogPage() {
         if (imageFiles.length > 0) {
           event.preventDefault();
 
-          // Set cursor position to drop location
           const coordinates = view.posAtCoords({
             left: event.clientX,
             top: event.clientY,
           });
 
           if (coordinates) {
-            // Fix: Import dynamically without await here
-            const { TextSelection } = await import("prosemirror-state"); // ✅ Move await to top level
-
+            const { TextSelection } = await import("prosemirror-state");
             const transaction = view.state.tr.setSelection(
               new TextSelection(view.state.doc.resolve(coordinates.pos)),
             );
             view.dispatch(transaction);
           }
 
-          // Upload each image
           for (const file of imageFiles) {
-            // ✅ Use for...of instead of forEach for better async handling
             await handleImageUpload(file);
           }
-
           return true;
         }
         return false;
@@ -247,7 +225,6 @@ export default function AddBlogPage() {
     },
   });
 
-  // Handle manual image upload button click
   const handleImageButtonClick = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -268,6 +245,7 @@ export default function AddBlogPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const isEditorEmpty = blogEditor?.getText().trim().length === 0;
 
     if (!formData.title || isEditorEmpty) {
@@ -283,38 +261,24 @@ export default function AddBlogPage() {
     setError("");
     setIsLoading(true);
 
-    let finalContent = formData.content; // Start with current content
+    let finalContent = formData.content;
 
-    // If there are pending images, upload them to Cloudinary and replace URLs
     if (pendingImages.length > 0) {
       setUploadingImages(true);
       try {
         const imageIdToUrlMap = {};
         let uploadFailed = false;
 
-        console.log(
-          "Starting image uploads. Pending images:",
-          pendingImages.length,
-        );
-
-        // Upload each image to Cloudinary
         for (const img of pendingImages) {
           try {
-            console.log(`Uploading image: ${img.id}`);
             const cloudinaryUrl = await uploadImage(img.file);
             imageIdToUrlMap[img.id] = cloudinaryUrl;
-            console.log(`Uploaded ${img.id} -> ${cloudinaryUrl}`);
-            // Clean up blob URL
             URL.revokeObjectURL(img.localUrl);
           } catch (uploadErr) {
-            console.error(`Failed to upload image ${img.id}:`, uploadErr);
             uploadFailed = true;
           }
         }
 
-        console.log("All uploads complete. imageIdToUrlMap:", imageIdToUrlMap);
-
-        // If any upload failed, stop the process
         if (uploadFailed) {
           setError("Some images failed to upload. Please try again.");
           setUploadingImages(false);
@@ -322,25 +286,15 @@ export default function AddBlogPage() {
           return;
         }
 
-        // Replace blob URLs in editor content with Cloudinary URLs
         if (Object.keys(imageIdToUrlMap).length > 0) {
-          // Build new content JSON with replaced URLs
-          let contentJson = JSON.parse(JSON.stringify(blogEditor.getJSON())); // Deep clone
-          console.log(
-            "Original contentJson before replacement:",
-            JSON.stringify(contentJson).substring(0, 500),
-          );
+          let contentJson = JSON.parse(JSON.stringify(blogEditor.getJSON()));
 
           const replaceUrlsInJson = (node) => {
             if (node.type === "image") {
               const imageId = node.attrs?.["data-id"];
-              console.log(
-                `Found image node, data-id: ${imageId}, src: ${node.attrs?.src?.substring(0, 50)}...`,
-              );
               if (imageId && imageIdToUrlMap[imageId]) {
                 node.attrs.src = imageIdToUrlMap[imageId];
                 delete node.attrs["data-id"];
-                console.log(`Replaced src with: ${imageIdToUrlMap[imageId]}`);
               }
             }
             if (node.content) {
@@ -352,25 +306,13 @@ export default function AddBlogPage() {
             contentJson.content.forEach(replaceUrlsInJson);
           }
 
-          console.log(
-            "Final contentJson after replacement:",
-            JSON.stringify(contentJson).substring(0, 500),
-          );
-
-          // ✅ Update the editor with new content
           blogEditor.commands.setContent(contentJson);
-
-          // ✅ Store the FINAL content to send
           finalContent = contentJson;
-
-          // Update form data state (optional, for UI consistency)
           setFormData((prev) => ({ ...prev, content: contentJson }));
         }
 
-        // Clear pending images
         setPendingImages([]);
       } catch (err) {
-        console.error("Error uploading images:", err);
         setError("Failed to upload images. Please try again.");
         setIsLoading(false);
         setUploadingImages(false);
@@ -381,17 +323,19 @@ export default function AddBlogPage() {
     }
 
     try {
-      // Create FormData for file upload
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
-
-      // ✅ Use finalContent instead of formData.content!
       formDataToSend.append("content", JSON.stringify(finalContent));
-
       formDataToSend.append("category", formData.category);
       formDataToSend.append("tags", formData.tags);
 
-      // Cover image is still sent as file with field name "coverImage"
+      if (formData.collaboratorEmails) {
+        formDataToSend.append(
+          "collaboratorEmails",
+          formData.collaboratorEmails,
+        );
+      }
+
       if (frontPic) {
         formDataToSend.append("coverImage", frontPic);
       }
@@ -401,7 +345,7 @@ export default function AddBlogPage() {
       if (response.data.success) {
         setSuccessMessage("Blog published successfully!");
         setTimeout(() => {
-          navigate("/");
+          navigate("/explore");
         }, 1500);
 
         setFormData({
@@ -409,13 +353,13 @@ export default function AddBlogPage() {
           content: "",
           category: "technology",
           tags: "",
+          collaboratorEmails: "",
         });
         blogEditor.commands.setContent("");
         handleRemoveFrontPic();
         setPendingImages([]);
       }
     } catch (err) {
-      console.error("Error creating blog:", err);
       setError(
         err.response?.data?.message ||
           "Failed to create blog. Please try again.",
@@ -424,22 +368,22 @@ export default function AddBlogPage() {
       setIsLoading(false);
     }
   };
-  // Function to clear error message
+
   const clearError = () => {
     setError("");
   };
 
-  // Function to clear success message
   const clearSuccess = () => {
     setSuccessMessage("");
   };
 
-  if (!blogEditor)
+  if (!blogEditor) {
     return (
       <p className="p-10 text-center text-gray-500 font-medium">
         Loading Editor...
       </p>
     );
+  }
 
   const percentage = Math.round(
     (100 / limit) * blogEditor.storage.characterCount.characters(),
@@ -447,9 +391,7 @@ export default function AddBlogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative">
-      {/* Floating Notifications Container - Bottom Right */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md">
-        {/* Error Notification */}
         {error && (
           <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-lg animate-slide-up flex items-start justify-between">
             <div className="flex-1">
@@ -464,7 +406,6 @@ export default function AddBlogPage() {
           </div>
         )}
 
-        {/* Success Notification */}
         {successMessage && (
           <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-lg animate-slide-up flex items-start justify-between">
             <div className="flex-1">
@@ -479,7 +420,6 @@ export default function AddBlogPage() {
           </div>
         )}
 
-        {/* Uploading Notification */}
         {uploadingImages && (
           <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-lg animate-slide-up">
             <p className="font-medium">Uploading images... Please wait.</p>
@@ -513,7 +453,6 @@ export default function AddBlogPage() {
             />
           </div>
 
-          {/* Front Pic Upload */}
           <div className="flex flex-col gap-2">
             <label className="font-semibold text-gray-700 text-sm italic">
               Cover Image
@@ -543,7 +482,9 @@ export default function AddBlogPage() {
               </div>
             ) : (
               <div
-                onClick={() => frontPicInputRef.current?.click()}
+                onClick={() => {
+                  frontPicInputRef.current?.click();
+                }}
                 className="w-full aspect-video rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
               >
                 <Upload className="w-10 h-10 text-gray-400 mb-2" />
@@ -588,49 +529,54 @@ export default function AddBlogPage() {
             <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-all">
               <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border-b border-gray-300">
                 <ToolbarButton
-                  onClick={() =>
-                    blogEditor.chain().focus().toggleHeading({ level: 2 }).run()
-                  }
+                  onClick={() => {
+                    blogEditor
+                      .chain()
+                      .focus()
+                      .toggleHeading({ level: 2 })
+                      .run();
+                  }}
                   active={blogEditor.isActive("heading", { level: 2 })}
                   icon={<Heading2 size={18} />}
                   label="Heading"
                   disabled={isLoading}
                 />
                 <ToolbarButton
-                  onClick={() => blogEditor.chain().focus().toggleBold().run()}
+                  onClick={() => {
+                    blogEditor.chain().focus().toggleBold().run();
+                  }}
                   active={blogEditor.isActive("bold")}
                   icon={<Bold size={18} />}
                   label="Bold"
                   disabled={isLoading}
                 />
                 <ToolbarButton
-                  onClick={() =>
-                    blogEditor.chain().focus().toggleItalic().run()
-                  }
+                  onClick={() => {
+                    blogEditor.chain().focus().toggleItalic().run();
+                  }}
                   active={blogEditor.isActive("italic")}
                   icon={<Italic size={18} />}
                   label="Italic"
                   disabled={isLoading}
                 />
                 <ToolbarButton
-                  onClick={() =>
-                    blogEditor.chain().focus().toggleUnderline().run()
-                  }
+                  onClick={() => {
+                    blogEditor.chain().focus().toggleUnderline().run();
+                  }}
                   active={blogEditor.isActive("underline")}
                   icon={<UnderlineIcon size={18} />}
                   label="Underline"
                   disabled={isLoading}
                 />
                 <ToolbarButton
-                  onClick={() =>
-                    blogEditor.chain().focus().toggleBulletList().run()
-                  }
+                  onClick={() => {
+                    blogEditor.chain().focus().toggleBulletList().run();
+                  }}
                   active={blogEditor.isActive("bulletList")}
                   icon={<List size={18} />}
                   label="Bullet List"
                   disabled={isLoading}
                 />
-                {/* Image Upload Button */}
                 <ToolbarButton
                   onClick={handleImageButtonClick}
                   active={false}
@@ -664,7 +610,6 @@ export default function AddBlogPage() {
               </div>
             </div>
 
-            {/* Help text for image upload */}
             <p className="text-xs text-gray-400 mt-1">
               💡 Tip: You can drag & drop images or paste them directly from
               clipboard (Ctrl+V)
@@ -685,9 +630,31 @@ export default function AddBlogPage() {
               name="tags"
               value={formData.tags}
               onChange={handleChange}
-              placeholder="e.g. react, web, coding"
+              placeholder="Tags (use 'incomplete' if unfinished, comma-separated)"
               disabled={isLoading}
             />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="collaboratorEmails"
+              className="font-semibold text-gray-700 text-sm italic"
+            >
+              Collaborator Emails (comma separated)
+            </label>
+            <input
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              type="email"
+              id="collaboratorEmails"
+              name="collaboratorEmails"
+              value={formData.collaboratorEmails}
+              onChange={handleChange}
+              placeholder="user@example.com, friend@example.com"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-gray-500">
+              Emails will receive invite after publish
+            </p>
           </div>
 
           <button

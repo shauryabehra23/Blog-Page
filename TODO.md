@@ -1,27 +1,16 @@
-# Fix ReadBlogPage Like Status & Auth Issues ✅
+# Accept Invite Fix TODO
 
-## Steps
+## Steps:
 
-### 1. [✅] Update backend auth middleware
+- [x] Step 1: Create `frontend/src/pages/AcceptInvite/AcceptInvitePage.jsx` with useEffect API call
+- [x] Step 2: Edit `frontend/src/App.jsx` to add route `/accept-invite/:token`
+- [ ] Step 3: Test by sending invite and clicking link
 
-- Edit `backend/middleWares/authMw.js`
-- Make `checkTokenMw` block (401) on invalid tokens like `tokenAuthMw`
+Current: ✅ Steps 1-2 complete. Ready for Step 3: Test.
 
-### 2. [✅] Enhance frontend API error handling
+To test:
 
-- Edit `frontend/src/utils/api.js`
-- Add 400 auth error handling in interceptor (clear token)
-
-### 3. [ ] Test fixes
-
-**To test:**
-
-- Restart backend: `cd backend && npm start`
-- Navigate to any ReadBlog page
-- Check console: No more 400 \"undefined \_id\" errors
-- Like button should work correctly
-- Test stale token: Manually delete/edit localStorage token, reload → should redirect to /login
-
-_Note: Image styling skipped per user request._
-
-**Status: Code fixes complete. Restart backend and test!**
+1. Ensure backend running: cd backend && npm start (should mount /api/collaborator)
+2. Frontend: cd frontend && npm run dev
+3. From AddBlogPage, send invite to your email/other.
+4. Click link in email: should hit AcceptInvitePage, call API, show success/redirect.

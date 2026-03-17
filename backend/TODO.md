@@ -1,13 +1,11 @@
-# TODO: Add Middleware for Login and Register Validation
+# Fix Blog-Collaborator Communication Issue
 
-## Tasks
+## Plan Steps:
 
-- [x] Implement `registerMw` in `backend/middleWares/authMw.js` to validate email and password format for registration.
-- [ ] Implement `loginMw` in `backend/middleWares/authMw.js` to validate email format for login.
-- [ ] Update `backend/routes/authRoutes.js` to apply `registerMw` to the `/register` route and `loginMw` to the `/loginAuth` route.
-- [ ] Test the middleware by running the server and checking validation errors.
+- [x] **Step 1**: Update `backend/controllers/collaboratorControllers.js` - Add `sendCollaborationInvites(blogId, emailsArray)` function for direct calls.
+- [x] **Step 2**: Update `backend/controllers/blogControllers.js` - Static require, call new func in createBlog.
+- [x] **Step 3**: Populate `backend/routes/collaboratorRoutes.js` - Add HTTP routes (sendInvite, acceptInvite, getCollaborators).
+- [x] **Step 4**: Added detailed console logs throughout workflow for debugging.
+- [x] **Done**: attempt_completion
 
-## Validation Rules
-
-- **Email**: Must be a valid email format (e.g., using regex).
-- **Password** (for register): At least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.
+**Progress**: Complete. Added collaboratorRoutes to server.js (/collaborator prefix). All logs now active. Restart server (`cd backend && npm start`), create blog with emails="test@test.com", watch logs.

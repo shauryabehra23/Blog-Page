@@ -1,37 +1,41 @@
 const User = require("../models/User");
 const Blog = require("../models/Blog");
 const Like = require("../models/Likes");
+const { sendCollaborationInvites } = require("./collaboratorControllers"); // Add this import at the top
 
-// Create a new blog - FIXED VERSION
 const createBlog = async (req, res) => {
+  console.log("\n=========================================");
+  console.log("    [BLOG CONTROLLER - createBlog] HIT     ");
+  console.log("=========================================");
+
   try {
     const userId = req.user._id;
-    const { title, content, category, tags } = req.body;
-    console.log("Received content type:", typeof content);
-    console.log("Content preview:", content?.substring?.(0, 100) || content);
+    const { title, content, category, tags, collaboratorEmails } = req.body;
+
+    console.log("[BLOG CREATE] Initial Payload Check:");
+    console.log(" -> Title:", title);
+    console.log(" -> Raw CollaboratorEmails:", collaboratorEmails);
+    console.log(" -> User ID:", userId);
 
     if (!title || !content) {
+      console.warn("[BLOG CREATE] Validation failed: Missing title or content");
       return res
         .status(400)
         .json({ message: "Title and content are required" });
     }
 
-    // Handle uploaded file - coverImage is sent as single file
     let frontPic = "";
     if (req.file) {
-      // Single cover image file
       frontPic = req.file.secure_url || req.file.path || "";
+      console.log("[BLOG CREATE] Front pic processed:", frontPic);
     }
 
-    // ✅ PARSE the content from string to object!
-    // Frontend sends content as JSON.stringify(editor.getJSON())
     let parsedContent;
     try {
       parsedContent =
         typeof content === "string" ? JSON.parse(content) : content;
-      console.log("Successfully parsed content to object");
     } catch (parseError) {
-      console.error("Error parsing content:", parseError);
+      console.error("[BLOG CREATE] Content Parse Error:", parseError);
       return res.status(400).json({
         success: false,
         message: "Invalid content format",
@@ -39,44 +43,97 @@ const createBlog = async (req, res) => {
       });
     }
 
-    // ✅ Extract image URLs from parsed content for contentImages array
     const contentImages = [];
     const extractImagesFromNode = (node) => {
-      if (node.type === "image" && node.attrs?.src) {
+      if (node.type === "image" && node.attrs?.src)
         contentImages.push(node.attrs.src);
-      }
-      if (node.content && Array.isArray(node.content)) {
+      if (node.content && Array.isArray(node.content))
         node.content.forEach(extractImagesFromNode);
-      }
     };
-
     if (parsedContent.content && Array.isArray(parsedContent.content)) {
       parsedContent.content.forEach(extractImagesFromNode);
     }
 
-    // Create new blog with PARSED content
+    console.log("[BLOG CREATE] Saving blog to DB...");
     const newBlog = new Blog({
       author: userId,
       title,
       frontPic,
-      content: parsedContent, // 👈 Now it's an object, not a string!
-      contentImages: contentImages, // 👈 Store extracted image URLs
+      content: parsedContent,
+      contentImages: contentImages,
       category,
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
     });
 
     await newBlog.save();
+    console.log("[BLOG CREATE] Blog saved successfully! ID:", newBlog._id);
 
-    // Populate author details before returning
     await newBlog.populate("author", "name email");
 
+    // ✅ ADDED: Create a variable to hold the invite results
+    let invitationResults = null;
+
+    if (collaboratorEmails) {
+      console.log("\n[BLOG CREATE] >>> Initiating Collaborator Flow <<<");
+      console.log("[BLOG CREATE] Raw input to parse:", collaboratorEmails);
+
+      let emails = [];
+      if (typeof collaboratorEmails === "string") {
+        emails = collaboratorEmails
+          .split(",")
+          .map((e) => e.trim())
+          .filter(Boolean);
+      } else if (Array.isArray(collaboratorEmails)) {
+        emails = collaboratorEmails;
+      }
+
+      console.log(
+        "[BLOG CREATE] Parsed emails array ready for handoff:",
+        emails,
+      );
+
+      try {
+        console.log("[BLOG CREATE] Awaiting sendCollaborationInvites()...");
+
+        // ✅ ADDED: Capture the returned results here
+        invitationResults = await sendCollaborationInvites(
+          newBlog._id,
+          emails,
+          req.user,
+        );
+
+        console.log(
+          "[BLOG CREATE] sendCollaborationInvites() finished successfully. Results returned to Blog Controller.",
+        );
+      } catch (err) {
+        console.error(
+          "\n[BLOG CREATE] ERROR CAUGHT FROM sendCollaborationInvites():",
+          err.message,
+        );
+        console.error(err);
+        // We set invitationResults to reflect the error so the frontend knows it failed
+        invitationResults = {
+          error: "Failed to process invites",
+          details: err.message,
+        };
+      }
+    } else {
+      console.log(
+        "[BLOG CREATE] No collaborator emails provided. Skipping collab flow.",
+      );
+    }
+
+    console.log("[BLOG CREATE] Sending 201 Success Response to Frontend.\n");
+
+    // ✅ ADDED: Include invitationResults in the final JSON response
     return res.status(201).json({
       success: true,
       message: "Blog created successfully",
       blog: newBlog,
+      invites: invitationResults, // The frontend can now access response.data.invites
     });
   } catch (error) {
-    console.error("Error creating blog:", error);
+    console.error("\n[BLOG CREATE] FATAL ERROR:", error);
     return res.status(400).json({
       success: false,
       message: "Failed to create blog",
@@ -84,6 +141,7 @@ const createBlog = async (req, res) => {
     });
   }
 };
+// ... (Keep the rest of your getNextBlogs, getBlog, toggleLike functions exactly as they were) ...
 
 // Get blogs with pagination and sorting
 const getNextBlogs = async (req, res) => {

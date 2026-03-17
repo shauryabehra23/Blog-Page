@@ -8,6 +8,7 @@ import ProfilePage from "./pages/Profile/ProfilePage";
 import ExplorePage from "./pages/Explore/ExplorePage";
 import AddBlogPage from "./pages/AddBlog/AddBlogPage";
 import ReadBlogPage from "./pages/ReadBlog/ReadBlogPage";
+import AcceptInvitePage from "./pages/AcceptInvite/AcceptInvitePage";
 import { AuthContext } from "./context/AuthContext";
 import "./App.css";
 
@@ -39,6 +40,7 @@ function App() {
           />
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
           <Route path="/blog/:blogId" element={<ReadBlogPage />} />
           <Route
             path="/add-blog"
