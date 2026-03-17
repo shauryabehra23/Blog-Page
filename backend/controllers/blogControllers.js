@@ -10,18 +10,28 @@ const createBlog = async (req, res) => {
 
   try {
     const userId = req.user._id;
-    const { title, content, category, tags, collaboratorEmails } = req.body;
+    const {
+      title,
+      sections,
+      category,
+      tags,
+      collaboratorEmails: rawCollaboratorEmails,
+    } = req.body;
+
+    console.log("Sections received:", sections);
 
     console.log("[BLOG CREATE] Initial Payload Check:");
     console.log(" -> Title:", title);
-    console.log(" -> Raw CollaboratorEmails:", collaboratorEmails);
+    console.log(" -> Raw CollaboratorEmails:", rawCollaboratorEmails || "none");
     console.log(" -> User ID:", userId);
 
-    if (!title || !content) {
-      console.warn("[BLOG CREATE] Validation failed: Missing title or content");
+    if (!title || !sections || sections.length === 0) {
+      console.warn(
+        "[BLOG CREATE] Validation failed: Missing title or sections",
+      );
       return res
         .status(400)
-        .json({ message: "Title and content are required" });
+        .json({ message: "Title and at least one section are required" });
     }
 
     let frontPic = "";
@@ -30,15 +40,15 @@ const createBlog = async (req, res) => {
       console.log("[BLOG CREATE] Front pic processed:", frontPic);
     }
 
-    let parsedContent;
+    let parsedSections;
     try {
-      parsedContent =
-        typeof content === "string" ? JSON.parse(content) : content;
+      parsedSections =
+        typeof sections === "string" ? JSON.parse(sections) : sections;
     } catch (parseError) {
-      console.error("[BLOG CREATE] Content Parse Error:", parseError);
+      console.error("[BLOG CREATE] Sections Parse Error:", parseError);
       return res.status(400).json({
         success: false,
-        message: "Invalid content format",
+        message: "Invalid sections format",
         error: parseError.message,
       });
     }
@@ -50,17 +60,48 @@ const createBlog = async (req, res) => {
       if (node.content && Array.isArray(node.content))
         node.content.forEach(extractImagesFromNode);
     };
-    if (parsedContent.content && Array.isArray(parsedContent.content)) {
-      parsedContent.content.forEach(extractImagesFromNode);
+    // Extract emails from sections first
+    let emails = parsedSections
+      .map((section) => section.collaboratorEmail)
+      .filter(Boolean)
+      .map((email) => email.trim());
+
+    // Fallback/add from rawCollaboratorEmails
+    if (rawCollaboratorEmails) {
+      let rawEmails = [];
+      if (typeof rawCollaboratorEmails === "string") {
+        rawEmails = rawCollaboratorEmails
+          .split(",")
+          .map((e) => e.trim())
+          .filter(Boolean);
+      } else if (Array.isArray(rawCollaboratorEmails)) {
+        rawEmails = rawCollaboratorEmails.map((e) => e.trim()).filter(Boolean);
+      }
+      emails = [...new Set([...emails, ...rawEmails])];
     }
+    const collabInvites = parsedSections
+      .filter((section) => section.collaboratorEmail)
+      .map((section, index) => ({
+        email: section.collaboratorEmail.trim(),
+        sectionId: section.sectionId,
+        sectionTitle: section.title,
+        seqNo: section.seqNo || index,
+      }));
+    console.log("[BLOG CREATE] Final collab invites:", collabInvites);
+
+    // Fix image extraction for sections
+    parsedSections.forEach((section) => {
+      if (section.content && Array.isArray(section.content)) {
+        section.content.forEach(extractImagesFromNode);
+      }
+    });
 
     console.log("[BLOG CREATE] Saving blog to DB...");
     const newBlog = new Blog({
       author: userId,
       title,
       frontPic,
-      content: parsedContent,
-      contentImages: contentImages,
+      sections: parsedSections,
       category,
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
     });
@@ -73,24 +114,9 @@ const createBlog = async (req, res) => {
     // ✅ ADDED: Create a variable to hold the invite results
     let invitationResults = null;
 
-    if (collaboratorEmails) {
+    if (emails.length > 0) {
       console.log("\n[BLOG CREATE] >>> Initiating Collaborator Flow <<<");
-      console.log("[BLOG CREATE] Raw input to parse:", collaboratorEmails);
-
-      let emails = [];
-      if (typeof collaboratorEmails === "string") {
-        emails = collaboratorEmails
-          .split(",")
-          .map((e) => e.trim())
-          .filter(Boolean);
-      } else if (Array.isArray(collaboratorEmails)) {
-        emails = collaboratorEmails;
-      }
-
-      console.log(
-        "[BLOG CREATE] Parsed emails array ready for handoff:",
-        emails,
-      );
+      console.log("[BLOG CREATE] Emails ready for handoff:", emails);
 
       try {
         console.log("[BLOG CREATE] Awaiting sendCollaborationInvites()...");
@@ -98,7 +124,7 @@ const createBlog = async (req, res) => {
         // ✅ ADDED: Capture the returned results here
         invitationResults = await sendCollaborationInvites(
           newBlog._id,
-          emails,
+          collabInvites,
           req.user,
         );
 

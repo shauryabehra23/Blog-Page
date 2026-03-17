@@ -1,16 +1,1 @@
-# Accept Invite Fix TODO
-
-## Steps:
-
-- [x] Step 1: Create `frontend/src/pages/AcceptInvite/AcceptInvitePage.jsx` with useEffect API call
-- [x] Step 2: Edit `frontend/src/App.jsx` to add route `/accept-invite/:token`
-- [ ] Step 3: Test by sending invite and clicking link
-
-Current: ✅ Steps 1-2 complete. Ready for Step 3: Test.
-
-To test:
-
-1. Ensure backend running: cd backend && npm start (should mount /api/collaborator)
-2. Frontend: cd frontend && npm run dev
-3. From AddBlogPage, send invite to your email/other.
-4. Click link in email: should hit AcceptInvitePage, call API, show success/redirect.
+# Fix Collaborator Invite "email is not defined" Error&#10;&#10;## Plan Implementation Steps:&#10;1. [ ] Edit backend/controllers/collaboratorControllers.js to safe-guard email processing&#10;2. [ ] Test: cd backend &amp;&amp; nodemon server.js, create blog with collaborator&#10;3. [ ] Verify: No ReferenceError, CollaboratorBlog record created, email sent&#10;&#10;**Status: In progress**

@@ -33,11 +33,14 @@ const AcceptInvitePage = () => {
         );
         if (response.data.success) {
           setStatus("success");
-          setMessage("Invite accepted successfully!");
+          setMessage(response.data.message);
           setBlogTitle(response.data.blogTitle);
-          // Auto-redirect to profile after 3 seconds
+          setSectionTitle(response.data.sectionTitle);
+          // Auto-redirect to blog editor with section
           setTimeout(() => {
-            navigate("/profile");
+            navigate(
+              `/edit-blog/${response.data.blogId}?section=${response.data.sectionId}`,
+            );
           }, 3000);
         }
       } catch (error) {

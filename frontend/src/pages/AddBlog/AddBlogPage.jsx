@@ -46,11 +46,13 @@ export default function AddBlogPage() {
 
   const [formData, setFormData] = useState({
     title: "",
-    content: "",
     category: "technology",
     tags: "",
-    collaboratorEmails: "",
   });
+
+  const [sections, setSections] = useState([]);
+  const [tempSectionTitle, setTempSectionTitle] = useState("");
+  const [tempCollabEmail, setTempCollabEmail] = useState("");
 
   const [frontPic, setFrontPic] = useState(null);
   const [frontPicPreview, setFrontPicPreview] = useState(null);
@@ -248,8 +250,8 @@ export default function AddBlogPage() {
 
     const isEditorEmpty = blogEditor?.getText().trim().length === 0;
 
-    if (!formData.title || isEditorEmpty) {
-      setError("Please fill in all required fields (Title and Content)");
+    if (!formData.title || sections.length === 0) {
+      setError("Please fill title and add at least one section");
       return;
     }
 
@@ -325,16 +327,9 @@ export default function AddBlogPage() {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
-      formDataToSend.append("content", JSON.stringify(finalContent));
       formDataToSend.append("category", formData.category);
       formDataToSend.append("tags", formData.tags);
-
-      if (formData.collaboratorEmails) {
-        formDataToSend.append(
-          "collaboratorEmails",
-          formData.collaboratorEmails,
-        );
-      }
+      formDataToSend.append("sections", JSON.stringify(sections));
 
       if (frontPic) {
         formDataToSend.append("coverImage", frontPic);
@@ -350,12 +345,12 @@ export default function AddBlogPage() {
 
         setFormData({
           title: "",
-          content: "",
           category: "technology",
           tags: "",
-          collaboratorEmails: "",
         });
-        blogEditor.commands.setContent("");
+        setSections([]);
+        setTempSectionTitle("");
+        setTempCollabEmail("");
         handleRemoveFrontPic();
         setPendingImages([]);
       }
@@ -635,27 +630,80 @@ export default function AddBlogPage() {
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label
-              htmlFor="collaboratorEmails"
-              className="font-semibold text-gray-700 text-sm italic"
-            >
-              Collaborator Emails (comma separated)
-            </label>
-            <input
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
-              type="email"
-              id="collaboratorEmails"
-              name="collaboratorEmails"
-              value={formData.collaboratorEmails}
-              onChange={handleChange}
-              placeholder="user@example.com, friend@example.com"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-gray-500">
-              Emails will receive invite after publish
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const newSection = {
+                sectionId: `temp_${Date.now()}`,
+                title: "",
+                collaboratorEmail: null,
+              };
+              setSections([...sections, newSection]);
+            }}
+            className="w-full bg-green-600 hover:bg-green-700 px-6 py-2 text-white font-medium rounded-lg transition-all"
+            disabled={isLoading}
+          >
+            Add Section Row
+          </button>
+
+          {/* Sections List - Simple Text Rows */}
+          {sections.length > 0 && (
+            <div className="space-y-3">
+              <label className="font-semibold text-gray-700 text-sm italic">
+                Sections ({sections.length})
+              </label>
+              {sections.map((section, index) => (
+                <div
+                  key={section.sectionId}
+                  className="flex gap-3 p-3 border rounded-lg bg-gray-50"
+                >
+                  <input
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    value={section.title}
+                    onChange={(e) => {
+                      const newSections = sections.map((s) =>
+                        s.sectionId === section.sectionId
+                          ? { ...s, title: e.target.value }
+                          : s,
+                      );
+                      setSections(newSections);
+                    }}
+                    placeholder="Section content"
+                    disabled={isLoading}
+                  />
+                  <input
+                    className="w-32 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 text-xs"
+                    value={section.collaboratorEmail || ""}
+                    onChange={(e) => {
+                      const newSections = sections.map((s) =>
+                        s.sectionId === section.sectionId
+                          ? { ...s, collaboratorEmail: e.target.value || null }
+                          : s,
+                      );
+                      setSections(newSections);
+                    }}
+                    placeholder="Collab email"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSections(
+                        sections.filter(
+                          (s) => s.sectionId !== section.sectionId,
+                        ),
+                      )
+                    }
+                    className="text-red-500 hover:text-red-700 p-1"
+                    disabled={isLoading}
+                    title="Delete section"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <button
             type="submit"

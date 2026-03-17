@@ -11,6 +11,17 @@ const CollaboratorBlogSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    sectionId: {
+      type: String,
+      required: true,
+    },
+    sectionTitle: {
+      type: String,
+      required: true,
+    },
+    seqNo: {
+      type: Number,
+    },
     collaboratorEmail: {
       type: String,
       required: true,
@@ -22,7 +33,7 @@ const CollaboratorBlogSchema = new mongoose.Schema(
     inviteToken: {
       type: String,
       required: true,
-      unique: true, // This already creates an index - no need for additional index
+      unique: true,
     },
     status: {
       type: String,

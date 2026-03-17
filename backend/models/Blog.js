@@ -10,8 +10,20 @@ const BlogSchema = new mongoose.Schema(
     },
     title: { type: String, required: true },
     frontPic: { type: String, default: "" }, // Front cover picture URL
-    content: { type: Object }, // JSON is stored as Object in Mongoose
-    contentImages: [{ type: String }], // Array of image URLs from TipTap editor
+    sections: [
+      {
+        sectionId: { type: String, required: true, unique: true },
+        title: { type: String, required: true },
+        content: { type: Object }, // Tiptap JSON
+        collaboratorEmail: { type: String },
+        seqNo: { type: Number, default: 0 },
+        status: {
+          type: String,
+          enum: ["pending", "in-progress", "approved"],
+          default: "pending",
+        },
+      },
+    ],
     category: { type: String, default: "other" },
     tags: [{ type: String }],
 

@@ -14,165 +14,98 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendCollaborationInvites = async (blogId, emailsArray, blogOwner) => {
+const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
   console.log("\n--- [COLLAB - sendCollaborationInvites] START ---");
-  console.log("[COLLAB] blogId:", blogId);
-  console.log("[COLLAB] emailsArray received:", emailsArray);
-  console.log("[COLLAB] blogOwner:", blogOwner?.email || "Unknown");
 
   try {
-    console.log("[COLLAB] Fetching blog from DB...");
     const blog = await Blog.findById(blogId).populate("author", "name email");
-
-    if (!blog) {
-      console.error("[COLLAB] ERROR: Blog not found in DB:", blogId);
-      throw new Error("Blog not found");
-    }
-
-    console.log(
-      "[COLLAB] Found blog:",
-      blog.title,
-      "| Author:",
-      blog.author?.name || "Unknown",
-    );
+    if (!blog) throw new Error("Blog not found");
 
     const results = [];
 
-    for (const email of emailsArray) {
+    // ✅ FIX: Using 'invite' as the iterator
+    for (const invite of collabInvites) {
+      // Destructure everything we need from the object
+      const { email: rawEmail, sectionId, sectionTitle, seqNo } = invite;
+
+      // Define 'email' clearly at the top of the loop
+      const email = rawEmail?.trim() || "";
+
       console.log(`\n[COLLAB] --- Processing email: ${email} ---`);
 
-      if (!email || !email.trim()) {
-        console.warn("[COLLAB] Skipping empty email string");
-        results.push({ email, status: "skipped_empty" });
+      // 1. Validation Checks
+      if (!email) {
+        results.push({ email: "missing", status: "skipped_empty" });
         continue;
       }
 
-      const trimmedEmail = email.trim();
-
-      if (trimmedEmail === blogOwner.email) {
-        console.warn(
-          "[COLLAB] Skipping self invite to blog owner:",
-          trimmedEmail,
-        );
-        results.push({ email: trimmedEmail, status: "skipped_self" });
+      if (email === blogOwner.email) {
+        results.push({ email, status: "skipped_self" });
         continue;
       }
 
-      console.log(
-        "[COLLAB] Checking for existing invite in DB for:",
-        trimmedEmail,
-      );
+      // 2. Check for existing invite
       const existing = await CollaboratorBlog.findOne({
         blog: blogId,
-        collaboratorEmail: trimmedEmail,
+        collaboratorEmail: email,
       });
 
       if (existing) {
-        console.warn("[COLLAB] Invite already exists for:", trimmedEmail);
         results.push({
-          email: trimmedEmail,
+          email,
           status: "already_invited",
           inviteId: existing._id,
         });
         continue;
       }
 
-      console.log("[COLLAB] No existing invite found. Generating token...");
-
+      // 3. Generate Token and Save
       const inviteToken = crypto.randomBytes(32).toString("hex");
-
-      console.log("[COLLAB] Creating new CollaboratorBlog record...");
       const collab = new CollaboratorBlog({
         blog: blogId,
         blogTitle: blog.title,
-        collaboratorEmail: trimmedEmail,
+        collaboratorEmail: email, // Use the 'email' variable we defined above
+        sectionId,
+        sectionTitle,
+        seqNo,
         user: blog.author._id,
         inviteToken,
         status: "pending",
       });
 
       await collab.save();
-      console.log(
-        "[COLLAB] Record saved! inviteToken (first 8):",
-        inviteToken.substring(0, 8),
-      );
 
+      // 4. Send Email
       const acceptUrl = `${process.env.FRONTEND_URL}/accept-invite/${inviteToken}`;
-      console.log("[COLLAB] Generated Accept URL:", acceptUrl);
-      console.log(
-        `[COLLAB] Handing off to Nodemailer API for: ${trimmedEmail}...`,
-      );
 
       try {
         await transporter.sendMail({
-          // ✅ FIX 1: Send FROM your new app email
           from: `"Quillr Invites" <${process.env.EMAIL_USER}>`,
-          // ✅ FIX 2: Replies go to the user who sent the invite
           replyTo: blogOwner.email,
-          to: trimmedEmail,
+          to: email, // Use 'email' here
           subject: `Collaboration Invite: ${blog.title}`,
           html: `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Blog Collaboration Invite</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-    .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-    .button { background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 20px 0; }
-    .footer { text-align: center; font-size: 14px; color: #666; margin-top: 30px; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>📝 Collaboration Invite</h1>
-  </div>
-  <div class="content">
-    <p>Hi there,</p>
-    <p><strong>${blogOwner.name}</strong> has invited you to collaborate on their blog post:</p>
-    <h2 style="color: #667eea;">"${blog.title}"</h2>
-    <p>Click the button below to accept the invitation and become a collaborator:</p>
-    <a href="${acceptUrl}" class="button">Accept Collaboration</a>
-    <p>or copy this link: <br><small>${acceptUrl}</small></p>
-    <p>This invite will expire if not accepted soon.</p>
-  </div>
-  <div class="footer">
-    <p>This is an automated message from Blog-Page.</p>
-  </div>
-</body>
-</html>`,
+            <div style="font-family: sans-serif; padding: 20px;">
+              <h2>Hello!</h2>
+              <p><strong>${blogOwner.name}</strong> invited you to edit the section: <strong>"${sectionTitle}"</strong></p>
+              <p>Blog Title: ${blog.title}</p>
+              <a href="${acceptUrl}" style="background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accept Invite</a>
+            </div>
+          `,
         });
-        console.log("[COLLAB] Nodemailer API SUCCESS.");
-        results.push({
-          email: trimmedEmail,
-          status: "sent",
-          inviteId: collab._id,
-        });
+        results.push({ email, status: "sent", inviteId: collab._id });
       } catch (emailError) {
-        console.error(
-          "[COLLAB] NODEMAILER API ERROR for",
-          trimmedEmail,
-          ":",
-          emailError,
-        );
         results.push({
-          email: trimmedEmail,
+          email,
           status: "email_failed",
           error: emailError.message,
         });
       }
     }
 
-    console.log(
-      "\n[COLLAB] All invites processed. Final results array:",
-      results,
-    );
-    console.log("--- [COLLAB - sendCollaborationInvites] END ---\n");
     return results;
   } catch (error) {
-    console.error("[COLLAB] FATAL ERROR in sendCollaborationInvites:", error);
+    console.error("[COLLAB] FATAL ERROR:", error);
     throw error;
   }
 };
@@ -339,7 +272,11 @@ const acceptInvite = async (req, res) => {
     console.log("[COLLAB API] Invite successfully accepted!");
     res.json({
       success: true,
-      message: "Collaboration accepted successfully!",
+      message: `Collaboration accepted! You are now editor for "${collab.sectionTitle}"`,
+      blogId: collab.blog,
+      sectionId: collab.sectionId,
+      sectionTitle: collab.sectionTitle,
+      seqNo: collab.seqNo,
       blogTitle: collab.blogTitle,
     });
   } catch (error) {
