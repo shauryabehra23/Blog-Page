@@ -5,8 +5,11 @@ const {
   getNextBlogs,
   getBlog,
   getBlogForEdit,
+  updateBlog,
   getUserBlogs,
   getUserCollaboratingBlogs,
+  updateSectionContent,
+  approveSectionContent,
   seedBlogs,
   toggleLike,
   getLikeStatus,
@@ -49,6 +52,24 @@ app.get("/user/:userId/collaborating", getUserCollaboratingBlogs);
 
 // ✅ ADD: Get blog for editing with role-based access (must come before /:id)
 app.get("/:id/edit-access", checkTokenMw, getBlogForEdit);
+
+// ✅ NEW: Update blog (author can update draft or publish)
+app.put(
+  "/:id",
+  checkTokenMw,
+  uploadBlogImages.single("coverImage"),
+  updateBlog,
+);
+
+// ✅ NEW: Update section content and status (must come before /:id)
+app.put("/:blogId/sections/:sectionId", checkTokenMw, updateSectionContent);
+
+// ✅ NEW: Approve section (author only)
+app.post(
+  "/:blogId/sections/:sectionId/approve",
+  checkTokenMw,
+  approveSectionContent,
+);
 
 // Get a single blog by ID
 app.get("/:id", getBlog);

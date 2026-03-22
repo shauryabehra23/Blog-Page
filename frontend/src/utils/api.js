@@ -83,6 +83,9 @@ export const blogAPI = {
       `/blogs/${blogId}/sections/${sectionId}/request-approval`,
       sectionData,
     ),
+  // Approve section content (for authors)
+  approveSectionContent: (blogId, sectionId) =>
+    apiClient.post(`/blogs/${blogId}/sections/${sectionId}/approve`),
 };
 
 // Comment API calls

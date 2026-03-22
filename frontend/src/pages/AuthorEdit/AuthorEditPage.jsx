@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
 import Underline from "@tiptap/extension-underline";
@@ -41,6 +41,38 @@ const CustomImage = Image.extend({
   },
 });
 
+// ReadOnlyEditor Component - Display TipTap JSON in read-only mode
+function ReadOnlyEditor({ content }) {
+  const readOnlyEditor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        underline: false,
+      }),
+      Underline,
+      CustomImage.configure({
+        inline: true,
+        HTMLAttributes: {
+          class: "blog-image-modal",
+          loading: "lazy",
+        },
+      }),
+      Placeholder.configure({
+        placeholder: "No content",
+      }),
+    ],
+    content: content || "",
+    editable: false,
+    editorProps: {
+      attributes: {
+        class:
+          "prose prose-sm sm:prose lg:prose-lg focus:outline-none max-w-none",
+      },
+    },
+  });
+
+  return <EditorContent editor={readOnlyEditor} />;
+}
+
 export default function AuthorEditPage() {
   const { blogId } = useParams();
   const navigate = useNavigate();
@@ -54,6 +86,9 @@ export default function AuthorEditPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [uploadingImages, setUploadingImages] = useState(false);
   const [pendingImages, setPendingImages] = useState([]);
+  const [pendingSections, setPendingSections] = useState([]);
+  const [selectedPendingSection, setSelectedPendingSection] = useState(null);
+  const [isApproving, setIsApproving] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -143,14 +178,27 @@ export default function AuthorEditPage() {
     },
   });
 
-  // Fetch blog data
+  // Fetch blog data - Helper function (wrapped in useCallback to prevent re-renders)
+  const fetchBlogData = useCallback(async () => {
+    try {
+      const response = await blogAPI.getForEdit(blogId);
+      if (response.data.success) {
+        return response.data.blog;
+      }
+    } catch (err) {
+      console.error("Error fetching blog:", err);
+      setError(err.response?.data?.message || "Failed to load blog");
+    }
+    return null;
+  }, [blogId]);
+
+  // Fetch blog data on component mount
   useEffect(() => {
     const fetchBlog = async () => {
       try {
         setLoading(true);
-        const response = await blogAPI.getForEdit(blogId);
-        if (response.data.success) {
-          const fetchedBlog = response.data.blog;
+        const fetchedBlog = await fetchBlogData();
+        if (fetchedBlog) {
           setBlog(fetchedBlog);
           setFormData({
             title: fetchedBlog.title || "",
@@ -161,9 +209,6 @@ export default function AuthorEditPage() {
             setFrontPicPreview(fetchedBlog.frontPic);
           }
         }
-      } catch (err) {
-        console.error("Error fetching blog:", err);
-        setError(err.response?.data?.message || "Failed to load blog");
       } finally {
         setLoading(false);
       }
@@ -172,7 +217,7 @@ export default function AuthorEditPage() {
     if (blogId) {
       fetchBlog();
     }
-  }, [blogId]);
+  }, [blogId, fetchBlogData]);
 
   // Load blog content into editor when blog is loaded
   useEffect(() => {
@@ -180,6 +225,16 @@ export default function AuthorEditPage() {
       blogEditor.commands.setContent(blog.content);
     }
   }, [blog, blogEditor]);
+
+  // Filter pending sections whenever blog changes
+  useEffect(() => {
+    if (blog && blog.sections) {
+      const pending = blog.sections.filter(
+        (section) => section.status === "pending",
+      );
+      setPendingSections(pending);
+    }
+  }, [blog]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -279,6 +334,124 @@ export default function AuthorEditPage() {
     };
 
     input.click();
+  };
+
+  // Handle approve section with direct TipTap insertion
+  const handleApproveSection = async (section) => {
+    console.log("[APPROVE] Section:", section.sectionId);
+    console.log("[APPROVE] Section Title:", section.title);
+    console.log("[APPROVE] Current Status:", section.status);
+
+    setIsApproving(true);
+    setError("");
+
+    try {
+      // STEP 1: The 'Approve' Action (Backend Only)
+      // Make a single API call to update only that specific section's status to 'approved'
+      console.log("[APPROVE] Approving section...");
+      await blogAPI.approveSectionContent(blogId, section.sectionId);
+      console.log("[APPROVE] ✓ Section approved successfully");
+
+      // STEP 2: Instant UI Update (Column 2)
+      // Remove the approved section from pendingSections so it disappears from review panel
+      setPendingSections((prev) =>
+        prev.filter((sec) => sec.sectionId !== section.sectionId)
+      );
+      console.log("[APPROVE] ✓ Removed from pending sections");
+
+      // Close the review modal
+      setSelectedPendingSection(null);
+
+      // STEP 3: Direct TipTap Injection (Column 1)
+      // Extract the section title and content from the approved section
+      // Format it: H2 title + content
+      console.log("[APPROVE] Injecting approved content into editor...");
+
+      const sectionTitle = section.title || "Section";
+      const sectionContent =
+        typeof section.content === "string"
+          ? JSON.parse(section.content)
+          : section.content || { type: "doc", content: [] };
+
+      // Build the formatted content to insert
+      const contentToInsert = {
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [
+              {
+                type: "text",
+                text: sectionTitle,
+              },
+            ],
+          },
+          ...(sectionContent.content || []),
+          {
+            type: "horizontalRule",
+          },
+        ],
+      };
+
+      // Use insertContentAt to append at the end of the document
+      // This keeps all of the Author's unsaved edits perfectly intact
+      if (blogEditor && contentToInsert.content.length > 0) {
+        blogEditor.commands.insertContentAt(
+          blogEditor.state.doc.content.size,
+          contentToInsert.content,
+        );
+        console.log("[APPROVE] ✓ Content injected into editor");
+
+        // Update formData to reflect the new content
+        setFormData((prev) => ({
+          ...prev,
+          content: blogEditor.getJSON(),
+        }));
+      }
+
+      setSuccessMessage("Section approved and content added to your draft!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      console.error("[APPROVE] Error during approval:", err);
+      setError(err.response?.data?.message || "Failed to approve section");
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  // Handle reject section
+  const handleRejectSection = async (section) => {
+    console.log("[REJECT] Section:", section.sectionId);
+    console.log("[REJECT] Section Title:", section.title);
+    console.log("[REJECT] Current Status:", section.status);
+
+    setIsApproving(true);
+    setError("");
+
+    try {
+      // Make API call to reject the section (revert status back to "in-progress" or similar)
+      console.log("[REJECT] Rejecting section...");
+      // You would need to add a rejectSectionContent API method
+      // For now, this is a placeholder
+
+      setError("Reject functionality not yet implemented");
+      console.log("[REJECT] ✓ Section rejected successfully");
+
+      // Optionally: Fetch updated blog data and refresh
+      // const updatedBlog = await fetchBlogData();
+      // if (updatedBlog) {
+      //   setBlog(updatedBlog);
+      // }
+
+      // Close the review modal
+      setSelectedPendingSection(null);
+    } catch (err) {
+      console.error("[REJECT] Error during rejection:", err);
+      setError(err.response?.data?.message || "Failed to reject section");
+    } finally {
+      setIsApproving(false);
+    }
   };
 
   const handleSave = async (blogStatus = "draft") => {
@@ -587,16 +760,98 @@ export default function AuthorEditPage() {
         {/* Right Column - Unapproved Content */}
         <div className="unapproved-column">
           <div className="unapproved-section">
-            <h2>Unapproved Content</h2>
+            <h2>Pending Review</h2>
             <div className="unapproved-content">
-              {/* Placeholder - to be filled with section approval status */}
-              <p className="placeholder-text">
-                No pending approvals at this time
-              </p>
+              {pendingSections.length === 0 ? (
+                <p className="placeholder-text">
+                  No pending sections to review.
+                </p>
+              ) : (
+                <div className="pending-sections-list">
+                  {pendingSections.map((section) => (
+                    <div
+                      key={section.sectionId}
+                      className="pending-section-card"
+                    >
+                      <div className="section-header">
+                        <div className="section-info">
+                          <h3 className="section-title">{section.title}</h3>
+                          <p className="section-meta">
+                            Assigned to:{" "}
+                            <span className="section-assignee">
+                              {section.assignedTo || "Unassigned"}
+                            </span>
+                          </p>
+                        </div>
+                        <span className="status-badge pending">Pending</span>
+                      </div>
+
+                      <button
+                        className="btn-review-content"
+                        onClick={() => setSelectedPendingSection(section)}
+                      >
+                        Review Content
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modal Overlay for Reviewing Section Content */}
+      {selectedPendingSection && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setSelectedPendingSection(null)}
+        >
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="modal-header">
+              <h3 className="modal-title">{selectedPendingSection.title}</h3>
+              <button
+                className="modal-close-btn"
+                onClick={() => setSelectedPendingSection(null)}
+                title="Close"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content - ReadOnly Editor */}
+            <div className="modal-content">
+              <ReadOnlyEditor content={selectedPendingSection.content} />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="modal-footer">
+              <button
+                className="btn-approve"
+                onClick={() => handleApproveSection(selectedPendingSection)}
+                disabled={isApproving}
+              >
+                {isApproving ? (
+                  <>
+                    <Loader size={16} className="inline mr-2 animate-spin" />
+                    Approving...
+                  </>
+                ) : (
+                  <>✓ Approve</>
+                )}
+              </button>
+              <button
+                className="btn-reject"
+                onClick={() => handleRejectSection(selectedPendingSection)}
+                disabled={isApproving}
+              >
+                ✕ Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

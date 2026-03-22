@@ -17,10 +17,11 @@ const BlogSchema = new mongoose.Schema(
         title: { type: String, required: true }, // Section label/name
         assignedTo: { type: String }, // Collaborator email
         seqNo: { type: Number, default: 0 },
+        content: { type: Object, default: null }, // Tiptap JSON - section content
         status: {
           type: String,
           enum: ["pending", "in-progress", "approved"],
-          default: "pending",
+          default: "in-progress",
         },
       },
     ],

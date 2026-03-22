@@ -421,7 +421,7 @@ export default function CollaboratorEditPage() {
     }
 
     try {
-      const response = await blogAPI.requestSectionApproval(blogId, sectionId, {
+      const response = await blogAPI.updateSectionContent(blogId, sectionId, {
         content: finalContent,
         status: "pending",
       });
