@@ -1,54 +1,93 @@
 import { useState, useEffect, useContext, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import "./ProfilePage.css";
 import { AuthContext } from "../../context/AuthContext";
-import { userAPI } from "../../utils/api";
+import { userAPI, blogAPI } from "../../utils/api";
+import { Edit2, Users, BookOpen, Loader, Heart } from "lucide-react";
 
 export default function ProfilePage() {
   const { user: authUser, updateUser } = useContext(AuthContext);
   const { userId } = useParams();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [authoredBlogs, setAuthoredBlogs] = useState([]);
+  const [collaboratingBlogs, setCollaboratingBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [blogsLoading, setBlogsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const isOwnProfile = !userId;
 
+  // Get the user ID to use for fetching blogs, relying primarily on URL or fetched user profile
+  const userIdForBlogs = userId || user?._id || authUser?._id;
+
+  // 1. Fetch User Profile
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         let response;
         if (isOwnProfile) {
-          // Fetch current user's profile
+          // This uses your auth token/cookie to get the profile, no need to wait for context!
           response = await userAPI.getProfile();
         } else {
-          // Fetch another user's profile
           response = await userAPI.getById(userId);
         }
         setUser(response.data);
       } catch (err) {
         console.error("Error fetching profile:", err);
         setError(err.response?.data?.message || "Failed to load profile");
-        // Fallback to auth user data if API fails for own profile
-        if (isOwnProfile && authUser) {
-          setUser({
-            name: authUser.name,
-            email: authUser.email,
-          });
-        }
       } finally {
-        setLoading(false);
+        setLoading(false); // This will now correctly trigger!
       }
     };
 
     fetchUserProfile();
-  }, [userId, isOwnProfile, authUser]);
+  }, [userId, isOwnProfile]); // Removed authUser from dependencies to prevent block
 
+  // 2. Fetch authored and collaborating blogs
+  useEffect(() => {
+    const fetchUserBlogs = async () => {
+      if (!userIdForBlogs) {
+        return; // Silently wait until userIdForBlogs populates
+      }
+
+      setBlogsLoading(true);
+      try {
+        // Fetch authored blogs
+        const authoredResponse = await blogAPI.getUserBlogs(userIdForBlogs);
+        if (authoredResponse.data.success) {
+          setAuthoredBlogs(authoredResponse.data.blogs || []);
+        }
+
+        // Fetch collaborating blogs (only for own profile)
+        if (isOwnProfile) {
+          try {
+            const collabResponse =
+              await blogAPI.getUserCollaboratingBlogs(userIdForBlogs);
+            if (collabResponse.data.success) {
+              setCollaboratingBlogs(collabResponse.data.blogs || []);
+            }
+          } catch (err) {
+            console.error("Error fetching collaborating blogs:", err);
+            setCollaboratingBlogs([]);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user blogs:", err);
+      } finally {
+        setBlogsLoading(false);
+      }
+    };
+
+    fetchUserBlogs();
+  }, [isOwnProfile, userIdForBlogs]);
+
+  // 3. Handle Image Upload
   const handleProfilePicChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!validTypes.includes(file.type)) {
       setError(
@@ -57,7 +96,6 @@ export default function ProfilePage() {
       return;
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       setError("File size too large. Please select an image under 5MB.");
       return;
@@ -73,22 +111,13 @@ export default function ProfilePage() {
       const response = await userAPI.updateProfilePic(formData);
 
       if (response.data.success) {
-        // Update local user state with new profile pic
         setUser((prev) => ({
           ...prev,
           profilePic: response.data.profilePic,
         }));
 
-        // Update AuthContext with new profile pic
         if (authUser && isOwnProfile) {
           updateUser({ profilePic: response.data.profilePic });
-        }
-
-        // Re-fetch user data to ensure we have the latest data
-        if (isOwnProfile) {
-          const profileResponse = await userAPI.getProfile();
-          setUser(profileResponse.data);
-          updateUser(profileResponse.data);
         }
       }
     } catch (err) {
@@ -98,7 +127,6 @@ export default function ProfilePage() {
       );
     } finally {
       setUploading(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -109,8 +137,9 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
+  // 4. Loading & Error States
   if (loading) {
-    return <div className="profile-container">Loading...</div>;
+    return <div className="profile-container">Loading profile...</div>;
   }
 
   if (error && !user) {
@@ -129,6 +158,7 @@ export default function ProfilePage() {
     );
   }
 
+  // 5. Main Render
   return (
     <div className="profile-container">
       <div className="profile-header">
@@ -166,24 +196,127 @@ export default function ProfilePage() {
 
       <div className="profile-stats">
         <div className="stat">
+          <Users className="stat-icon" />
           <h3>{user.followerCount || 0}</h3>
           <p>Followers</p>
         </div>
         <div className="stat">
+          <Users className="stat-icon" />
           <h3>{user.followingCount || 0}</h3>
           <p>Following</p>
         </div>
         <div className="stat">
+          <Heart className="stat-icon" />
           <h3>{user.totalLikesReceived || 0}</h3>
           <p>Likes Received</p>
         </div>
       </div>
 
-      <div className="profile-section">
-        <h2>{isOwnProfile ? "My Blogs" : `${user.name}'s Blogs`}</h2>
-        <div className="blogs-placeholder">
-          <p>No blogs yet</p>
+      <div className="profile-columns" style={{ marginTop: "30px" }}>
+        <div className="profile-column">
+          <div className="column-header">
+            <BookOpen className="column-icon" />
+            <h2>
+              {isOwnProfile ? "My Authored Blogs" : `${user.name}'s Blogs`}
+            </h2>
+          </div>
+          {blogsLoading ? (
+            <div className="blogs-placeholder">
+              <Loader className="loading-spinner" />
+              <p>Loading blogs...</p>
+            </div>
+          ) : authoredBlogs.length === 0 ? (
+            <div className="blogs-placeholder">
+              <BookOpen className="placeholder-icon" />
+              <p>No blogs yet</p>
+            </div>
+          ) : (
+            <div className="blogs-rows">
+              {authoredBlogs.map((blog) => (
+                <div key={blog._id} className="blog-row">
+                  <div
+                    className="blog-row-content"
+                    onClick={() => navigate(`/read/${blog._id}`)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <h3>{blog.title}</h3>
+                    <p className="blog-meta">
+                      {blog.createdAt &&
+                        new Date(blog.createdAt).toLocaleDateString()}
+                      {blog.sections?.length > 0 &&
+                        ` • ${blog.sections.length} sections`}
+                    </p>
+                  </div>
+                  {isOwnProfile && (
+                    <button
+                      className="edit-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/editor/${blog._id}`);
+                      }}
+                    >
+                      <Edit2 size={16} />
+                      Edit
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
+        {isOwnProfile && (
+          <div className="profile-column">
+            <div className="column-header">
+              <Users className="column-icon" />
+              <h2>Collaborating On</h2>
+            </div>
+            {blogsLoading ? (
+              <div className="blogs-placeholder">
+                <Loader className="loading-spinner" />
+                <p>Loading collaborations...</p>
+              </div>
+            ) : collaboratingBlogs.length === 0 ? (
+              <div className="blogs-placeholder">
+                <Users className="placeholder-icon" />
+                <p>No collaborations yet</p>
+              </div>
+            ) : (
+              <div className="blogs-rows">
+                {collaboratingBlogs.map((blog) => (
+                  <div key={blog._id} className="blog-row">
+                    <div
+                      className="blog-row-content"
+                      onClick={() => navigate(`/read/${blog._id}`)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <h3>{blog.title}</h3>
+                      <p className="blog-meta">
+                        {blog.mySection && (
+                          <>
+                            <span className="section-badge">
+                              Section: {blog.mySection.sectionTitle}
+                            </span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      className="edit-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/editor/${blog._id}`);
+                      }}
+                    >
+                      <Edit2 size={16} />
+                      Edit
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

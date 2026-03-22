@@ -10,12 +10,12 @@ const BlogSchema = new mongoose.Schema(
     },
     title: { type: String, required: true },
     frontPic: { type: String, default: "" }, // Front cover picture URL
+    content: { type: Object, default: null }, // Tiptap JSON - main blog content
     sections: [
       {
-        sectionId: { type: String, required: true, unique: true },
-        title: { type: String, required: true },
-        content: { type: Object }, // Tiptap JSON
-        collaboratorEmail: { type: String },
+        sectionId: { type: String, required: true },
+        title: { type: String, required: true }, // Section label/name
+        assignedTo: { type: String }, // Collaborator email
         seqNo: { type: Number, default: 0 },
         status: {
           type: String,

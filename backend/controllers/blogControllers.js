@@ -10,28 +10,18 @@ const createBlog = async (req, res) => {
 
   try {
     const userId = req.user._id;
-    const {
-      title,
-      sections,
-      category,
-      tags,
-      collaboratorEmails: rawCollaboratorEmails,
-    } = req.body;
+    const { title, content, sections, category, tags } = req.body;
 
-    console.log("Sections received:", sections);
-
-    console.log("[BLOG CREATE] Initial Payload Check:");
+    console.log("\n[BLOG CREATE] Payload Received:");
     console.log(" -> Title:", title);
-    console.log(" -> Raw CollaboratorEmails:", rawCollaboratorEmails || "none");
+    console.log(" -> Content exists:", !!content);
     console.log(" -> User ID:", userId);
 
-    if (!title || !sections || sections.length === 0) {
-      console.warn(
-        "[BLOG CREATE] Validation failed: Missing title or sections",
-      );
+    if (!title || !content) {
+      console.warn("[BLOG CREATE] Validation failed: Missing title or content");
       return res
         .status(400)
-        .json({ message: "Title and at least one section are required" });
+        .json({ success: false, message: "Title and content are required" });
     }
 
     let frontPic = "";
@@ -40,17 +30,40 @@ const createBlog = async (req, res) => {
       console.log("[BLOG CREATE] Front pic processed:", frontPic);
     }
 
-    let parsedSections;
-    try {
-      parsedSections =
-        typeof sections === "string" ? JSON.parse(sections) : sections;
-    } catch (parseError) {
-      console.error("[BLOG CREATE] Sections Parse Error:", parseError);
-      return res.status(400).json({
-        success: false,
-        message: "Invalid sections format",
-        error: parseError.message,
-      });
+    // Parse content
+    let parsedContent = content;
+    if (typeof content === "string") {
+      try {
+        parsedContent = JSON.parse(content);
+        console.log("[BLOG CREATE] ✅ Content parsed successfully");
+      } catch (parseError) {
+        console.error("[BLOG CREATE] Content Parse Error:", parseError);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid content format",
+          error: parseError.message,
+        });
+      }
+    }
+
+    // Parse sections
+    let parsedSections = [];
+    if (sections) {
+      try {
+        parsedSections =
+          typeof sections === "string" ? JSON.parse(sections) : sections;
+        console.log(
+          "[BLOG CREATE] ✅ Sections parsed, count:",
+          parsedSections.length,
+        );
+      } catch (parseError) {
+        console.error("[BLOG CREATE] Sections Parse Error:", parseError);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid sections format",
+          error: parseError.message,
+        });
+      }
     }
 
     const contentImages = [];
@@ -60,54 +73,78 @@ const createBlog = async (req, res) => {
       if (node.content && Array.isArray(node.content))
         node.content.forEach(extractImagesFromNode);
     };
-    // Extract emails from sections first
+
+    // Extract emails from sections
     let emails = parsedSections
       .map((section) => section.collaboratorEmail)
       .filter(Boolean)
       .map((email) => email.trim());
 
-    // Fallback/add from rawCollaboratorEmails
-    if (rawCollaboratorEmails) {
-      let rawEmails = [];
-      if (typeof rawCollaboratorEmails === "string") {
-        rawEmails = rawCollaboratorEmails
-          .split(",")
-          .map((e) => e.trim())
-          .filter(Boolean);
-      } else if (Array.isArray(rawCollaboratorEmails)) {
-        rawEmails = rawCollaboratorEmails.map((e) => e.trim()).filter(Boolean);
-      }
-      emails = [...new Set([...emails, ...rawEmails])];
-    }
+    // Build collaboration invites - only if email exists
     const collabInvites = parsedSections
-      .filter((section) => section.collaboratorEmail)
-      .map((section, index) => ({
-        email: section.collaboratorEmail.trim(),
-        sectionId: section.sectionId,
-        sectionTitle: section.title,
-        seqNo: section.seqNo || index,
-      }));
-    console.log("[BLOG CREATE] Final collab invites:", collabInvites);
+      .filter(
+        (section) =>
+          section.collaboratorEmail && section.sectionId && section.title,
+      )
+      .map((section, index) => {
+        const invite = {
+          email: section.collaboratorEmail.trim(),
+          sectionId: section.sectionId,
+          sectionTitle: section.title,
+          seqNo: section.seqNo !== undefined ? section.seqNo : index,
+        };
+        console.log(
+          "[BLOG CREATE] Invite prepared:",
+          invite.email,
+          "→",
+          invite.sectionTitle,
+        );
+        return invite;
+      });
+    console.log("[BLOG CREATE] Total invites:", collabInvites.length);
 
-    // Fix image extraction for sections
-    parsedSections.forEach((section) => {
-      if (section.content && Array.isArray(section.content)) {
-        section.content.forEach(extractImagesFromNode);
-      }
-    });
+    // Extract images from content
+    if (
+      parsedContent &&
+      parsedContent.content &&
+      Array.isArray(parsedContent.content)
+    ) {
+      parsedContent.content.forEach(extractImagesFromNode);
+      console.log("[BLOG CREATE] Images found:", contentImages.length);
+    }
+
+    // Prepare sections for storage
+    const sectionsData = parsedSections.map((section, idx) => ({
+      sectionId: section.sectionId || `section_${idx}`,
+      title: section.title || "Untitled",
+      assignedTo: section.collaboratorEmail || null,
+      seqNo: section.seqNo !== undefined ? section.seqNo : idx,
+      status: "pending",
+    }));
 
     console.log("[BLOG CREATE] Saving blog to DB...");
     const newBlog = new Blog({
       author: userId,
       title,
+      content: parsedContent,
       frontPic,
-      sections: parsedSections,
-      category,
-      tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
+      sections: sectionsData,
+      category: category || "other",
+      tags: tags
+        ? (Array.isArray(tags) ? tags : tags.split(",")).map((tag) =>
+            tag.trim(),
+          )
+        : [],
     });
 
+    console.log("[BLOG CREATE] Blog object created:");
+    console.log("  Title:", newBlog.title);
+    console.log("  Content:", newBlog.content ? "✅" : "❌");
+    console.log("  Sections:", newBlog.sections.length);
+    console.log("  Cover:", newBlog.frontPic ? "✅" : "❌");
+
     await newBlog.save();
-    console.log("[BLOG CREATE] Blog saved successfully! ID:", newBlog._id);
+    console.log("[BLOG CREATE] ✅ Blog saved successfully! ID:", newBlog._id);
 
     await newBlog.populate("author", "name email");
 
@@ -573,10 +610,248 @@ const seedBlogs = async (req, res) => {
   }
 };
 
+// Get blog for editing with role-based access control
+const getBlogForEdit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    console.log("\n[BLOG EDIT] Getting blog for edit access");
+    console.log("[BLOG EDIT] Blog ID:", id);
+    console.log("[BLOG EDIT] User ID:", userId);
+
+    const blog = await Blog.findById(id).populate("author", "name email");
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
+    }
+
+    // Check if user is the author
+    if (blog.author._id.toString() === userId.toString()) {
+      console.log("[BLOG EDIT] ✅ User is author - granting full access");
+      return res.status(200).json({
+        success: true,
+        blog,
+        role: "author",
+      });
+    }
+
+    // Check if user is a collaborator
+    const Collaborator = require("../models/Collaborator-Blog");
+    const collaboratorRecord = await Collaborator.findOne({
+      blogId: id,
+      "sections.status": "accepted",
+    });
+
+    if (!collaboratorRecord) {
+      console.log("[BLOG EDIT] ❌ User lacks permissions");
+      return res.status(403).json({
+        success: false,
+        message: "You don't have permission to edit this blog",
+      });
+    }
+
+    // Filter blog to show only accepted sections for collaborator
+    const acceptedSections = blog.sections.filter((section) =>
+      collaboratorRecord.sections.some(
+        (collabSection) =>
+          collabSection.sectionId === section.sectionId &&
+          collabSection.status === "accepted",
+      ),
+    );
+
+    const filteredBlog = {
+      ...blog.toObject(),
+      sections: acceptedSections,
+      _restrictedTo: "assigned-sections-only",
+    };
+
+    console.log(
+      "[BLOG EDIT] ✅ Collaborator access granted for",
+      acceptedSections.length,
+      "sections",
+    );
+    return res.status(200).json({
+      success: true,
+      blog: filteredBlog,
+      role: "collaborator",
+    });
+  } catch (error) {
+    console.error("[BLOG EDIT] Error:", error);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to fetch blog for editing",
+      error: error.message,
+    });
+  }
+};
+
+// ✅ NEW: Get all blogs authored by a specific user
+const getUserBlogs = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 8; // 8 blogs per page
+    const skip = (page - 1) * limit;
+
+    console.log(
+      "[GET USER BLOGS] Fetching blogs for author:",
+      userId,
+      "page:",
+      page,
+    );
+
+    // Get total count for user's blogs
+    const totalBlogs = await Blog.countDocuments({ author: userId });
+
+    // Fetch paginated blogs
+    const blogs = await Blog.find({ author: userId })
+      .populate("author", "name email profilePic")
+      .sort({ createdAt: -1 })
+      .select("-content") // Exclude heavy content field for list view
+      .skip(skip)
+      .limit(limit)
+      .exec();
+
+    const totalPages = Math.ceil(totalBlogs / limit);
+
+    console.log(
+      "[GET USER BLOGS] Found:",
+      blogs.length,
+      "blogs (page",
+      page,
+      "of",
+      totalPages,
+      ")",
+    );
+
+    return res.status(200).json({
+      success: true,
+      blogs,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalBlogs,
+        hasNextPage: page < totalPages,
+      },
+    });
+  } catch (error) {
+    console.error("[GET USER BLOGS] Error:", error);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to fetch user blogs",
+      error: error.message,
+    });
+  }
+};
+
+// ✅ NEW: Get all blogs the user is collaborating on (with pagination)
+const getUserCollaboratingBlogs = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 8; // 8 blogs per page
+    const skip = (page - 1) * limit;
+
+    console.log(
+      "[GET COLLAB BLOGS] Fetching collaborating blogs for user:",
+      userId,
+      "page:",
+      page,
+    );
+
+    const Collaborator = require("../models/Collaborator-Blog");
+    const User = require("../models/User");
+
+    // ✅ CORRECT: Get the user's email (they are the COLLABORATOR being invited)
+    const currentUser = await User.findById(userId);
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    console.log(
+      "[GET COLLAB BLOGS] Searching by collaborator email:",
+      currentUser.email,
+    );
+
+    // Get total count for user's collaborating blogs
+    const totalCollaborations = await Collaborator.countDocuments({
+      collaboratorEmail: currentUser.email,
+      status: "accepted",
+    });
+
+    // ✅ CORRECT: Search where current user is the COLLABORATOR (in collaboratorEmail field)
+    // user field stores the author/blog owner's ID
+    const collaborations = await Collaborator.find({
+      collaboratorEmail: currentUser.email,
+      status: "accepted",
+    })
+      .populate({
+        path: "blog",
+        populate: { path: "author", select: "name email profilePic" },
+      })
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
+
+    const totalPages = Math.ceil(totalCollaborations / limit);
+
+    console.log(
+      "[GET COLLAB BLOGS] Found:",
+      collaborations.length,
+      "collaborations (page",
+      page,
+      "of",
+      totalPages,
+      ")",
+    );
+
+    // Extract unique blogs and map collaboration details
+    const blogsWithCollabInfo = collaborations.map((collab) => ({
+      ...collab.blog.toObject(),
+      mySection: {
+        sectionId: collab.sectionId,
+        sectionTitle: collab.sectionTitle,
+        seqNo: collab.seqNo,
+        status: collab.status,
+      },
+    }));
+
+    return res.status(200).json({
+      success: true,
+      blogs: blogsWithCollabInfo,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCollaborations,
+        hasNextPage: page < totalPages,
+      },
+    });
+  } catch (error) {
+    console.error("[GET COLLAB BLOGS] Error:", error);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to fetch collaborating blogs",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createBlog,
   getNextBlogs,
   getBlog,
+  getBlogForEdit,
+  getUserBlogs,
+  getUserCollaboratingBlogs,
   seedBlogs,
   toggleLike,
   getLikeStatus,

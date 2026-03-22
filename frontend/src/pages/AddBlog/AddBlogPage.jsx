@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 import { useState, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import Underline from "@tiptap/extension-underline";
@@ -117,12 +118,20 @@ export default function AddBlogPage() {
   };
 
   const handleImageUpload = async (file) => {
+    console.log(
+      "[IMAGE-UPLOAD] Starting image upload:",
+      file.name,
+      `(${file.size} bytes)`,
+    );
+
     if (!file.type.startsWith("image/")) {
+      console.warn("[IMAGE-UPLOAD] Invalid file type:", file.type);
       setError("Please select an image file");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
+      console.warn("[IMAGE-UPLOAD] File too large:", file.size, "bytes");
       setError("Image size should be less than 5MB");
       return;
     }
@@ -131,8 +140,15 @@ export default function AddBlogPage() {
       const localUrl = URL.createObjectURL(file);
       const imageId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      console.log("[IMAGE-UPLOAD] Created local preview URL with ID:", imageId);
+
       setPendingImages((prev) => {
         const updated = [...prev, { id: imageId, file, localUrl }];
+        console.log(
+          "[IMAGE-UPLOAD] Updated pendingImages array:",
+          updated.length,
+          "images",
+        );
         return updated;
       });
 
@@ -146,15 +162,19 @@ export default function AddBlogPage() {
           "data-id": imageId,
         })
         .run();
+
+      console.log("[IMAGE-UPLOAD] Image inserted into editor");
     } catch (error) {
-      // Error handling without logs
+      console.error("[IMAGE-UPLOAD] Error:", error);
     }
   };
 
   const blogEditor = useEditor({
     extensions: [
-      StarterKit,
-      Underline,
+      StarterKit.configure({
+        underline: false, // Disable to avoid conflicts
+      }),
+      Underline, // Add explicitly after StarterKit configuration
       CustomImage.configure({
         inline: true,
         allowBase64: true,
@@ -248,14 +268,33 @@ export default function AddBlogPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const isEditorEmpty = blogEditor?.getText().trim().length === 0;
+    console.log("\n========== [AddBlogPage - handleSubmit] START ==========");
+    console.log("[FORM SUBMISSION] Form Data:", formData);
+    console.log("[FORM SUBMISSION] Sections Raw:", sections);
+    console.log(
+      "[FORM SUBMISSION] Editor Content (from formData):",
+      formData.content,
+    );
+    console.log("[FORM SUBMISSION] Pending Images:", pendingImages);
+    console.log("[FORM SUBMISSION] Uploading Images?", uploadingImages);
 
-    if (!formData.title || sections.length === 0) {
-      setError("Please fill title and add at least one section");
+    const isEditorEmpty = blogEditor?.getText().trim().length === 0;
+    console.log("[FORM SUBMISSION] Editor Empty?", isEditorEmpty);
+    console.log(
+      "[FORM SUBMISSION] Character count:",
+      blogEditor.storage.characterCount.characters(),
+    );
+
+    if (!formData.title || !formData.content) {
+      console.warn(
+        "[FORM SUBMISSION] Validation failed - missing title or content",
+      );
+      setError("Please fill title and write content");
       return;
     }
 
     if (uploadingImages) {
+      console.warn("[FORM SUBMISSION] Images still uploading");
       setError("Please wait for images to finish uploading");
       return;
     }
@@ -325,19 +364,55 @@ export default function AddBlogPage() {
     }
 
     try {
+      console.log("\n[FORM SUBMISSION] ======== Building FormData ========");
+
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
       formDataToSend.append("category", formData.category);
       formDataToSend.append("tags", formData.tags);
+
+      // ✅ CRITICAL: Send the editor content
+      console.log(
+        "[FORM SUBMISSION] Content:",
+        finalContent ? "✅ Sending" : "❌ Missing",
+      );
+      formDataToSend.append("content", JSON.stringify(finalContent));
+
+      console.log(
+        "[FORM SUBMISSION] Sections to send:",
+        JSON.stringify(sections, null, 2),
+      );
+      sections.forEach((section, idx) => {
+        console.log(
+          `  Section ${idx}: ID=${section.sectionId}, Title=${section.title}, Email=${section.collaboratorEmail}`,
+        );
+      });
+
       formDataToSend.append("sections", JSON.stringify(sections));
 
       if (frontPic) {
+        console.log(
+          "[FORM SUBMISSION] Cover image:",
+          frontPic.name,
+          `(${frontPic.size} bytes)`,
+        );
         formDataToSend.append("coverImage", frontPic);
       }
 
+      console.log("[FORM SUBMISSION] Posting to API...");
       const response = await blogAPI.create(formDataToSend);
 
       if (response.data.success) {
+        console.log("[FORM SUBMISSION] ✅ SUCCESS! Response:", response.data);
+        console.log(
+          "[FORM SUBMISSION] Blog created with ID:",
+          response.data.blog._id,
+        );
+        console.log(
+          "[FORM SUBMISSION] Invitation results:",
+          response.data.invites,
+        );
+
         setSuccessMessage("Blog published successfully!");
         setTimeout(() => {
           navigate("/explore");
@@ -355,12 +430,15 @@ export default function AddBlogPage() {
         setPendingImages([]);
       }
     } catch (err) {
+      console.error("[FORM SUBMISSION] ❌ ERROR:", err);
+      console.error("[FORM SUBMISSION] Error response:", err.response?.data);
       setError(
         err.response?.data?.message ||
           "Failed to create blog. Please try again.",
       );
     } finally {
       setIsLoading(false);
+      console.log("========== [AddBlogPage - handleSubmit] END ==========");
     }
   };
 
@@ -637,6 +715,7 @@ export default function AddBlogPage() {
                 sectionId: `temp_${Date.now()}`,
                 title: "",
                 collaboratorEmail: null,
+                seqNo: sections.length, // ✅ ADD: Set sequence number
               };
               setSections([...sections, newSection]);
             }}
@@ -675,9 +754,10 @@ export default function AddBlogPage() {
                     className="w-32 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 text-xs"
                     value={section.collaboratorEmail || ""}
                     onChange={(e) => {
+                      const value = e.target.value.trim();
                       const newSections = sections.map((s) =>
                         s.sectionId === section.sectionId
-                          ? { ...s, collaboratorEmail: e.target.value || null }
+                          ? { ...s, collaboratorEmail: value || null } // ✅ FIXED: trim and ensure null if empty
                           : s,
                       );
                       setSections(newSections);

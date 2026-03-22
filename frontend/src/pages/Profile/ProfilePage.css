@@ -1,172 +1,336 @@
 .profile-container {
-  max-width: 900px;
-  margin: 3rem auto;
+  max-width: 1400px;
+  margin: 2rem auto;
   padding: 0 1rem;
+  background: #ffffff;
+  min-height: 80vh; /* Lets page grow, but ensures minimum height */
 }
 
+/* --- Profile Header --- */
 .profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 2rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  background: #ffffff;
+  padding: 2.5rem 0;
+  margin-bottom: 3rem;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .profile-header-content {
   display: flex;
   gap: 2rem;
   align-items: flex-start;
-  flex: 1;
+  margin-bottom: 1.5rem;
 }
 
 .profile-avatar {
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid #667eea;
-  flex-shrink: 0;
+  border: 1px solid #e0e0e0;
+  transition: transform 0.3s ease;
 }
 
-.profile-info {
-  flex: 1;
+.profile-avatar:hover {
+  transform: scale(1.02);
 }
 
 .profile-info h1 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
+  margin: 0;
   font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #222;
 }
 
-.email {
-  color: #999;
-  font-size: 0.95rem;
-  margin: 0.5rem 0;
+.profile-info .email {
+  margin: 0;
+  font-size: 1rem;
+  color: #777;
 }
 
 .profile-header-actions {
   display: flex;
   gap: 1rem;
-  flex-direction: column;
+  flex-wrap: wrap;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
 }
 
 .btn-edit {
-  padding: 0.6rem 1.2rem;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-weight: 600;
+  padding: 0.7rem 1.25rem;
+  background: #ffffff;
+  color: #333;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.3s;
-  white-space: nowrap;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
 }
 
 .btn-edit:hover {
-  background: #5a67d8;
+  background: #f5f5f5;
+  border-color: #999;
 }
 
+.btn-edit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Profile Stats --- */
 .profile-stats {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 2rem;
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
 }
 
 .stat {
-  flex: 1;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 8px;
   text-align: center;
-  padding: 1rem;
-  border-radius: 6px;
-  background: #f8f9fa;
-  transition:
-    transform 0.3s,
-    box-shadow 0.3s;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
 }
 
 .stat:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.1);
+  background: #fafafa;
+}
+
+.stat-icon {
+  width: 28px;
+  height: 28px;
+  color: #999;
+  margin: 0 auto 1rem;
 }
 
 .stat h3 {
-  color: #667eea;
-  font-size: 2.5rem;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+  color: #333;
+  font-weight: 700;
 }
 
 .stat p {
-  color: #666;
-  margin: 0.5rem 0 0 0;
+  margin: 0;
+  color: #888;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
-.profile-section {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* --- Two Column Layout & Scrolling --- */
+.profile-columns {
+  display: flex;
+  gap: 30px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+  height: 75vh; /* This dictates how tall the scrollable boxes are */
+  min-height: 450px;
 }
 
-.profile-section h2 {
-  margin-top: 0;
+.profile-column {
+  flex: 1; /* Makes both columns equal width */
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column; /* Stacks header above scrolling blogs */
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0; /* Prevents header from shrinking when blogs fill up */
+}
+
+.column-icon {
+  width: 24px;
+  height: 24px;
+  color: #999;
+}
+
+.profile-column h2 {
+  margin: 0;
   color: #333;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* --- The Scrollable Area --- */
+.blogs-rows,
+.blogs-placeholder {
+  flex: 1; /* Forces this div to take up all remaining space in the column */
+  overflow-y: auto; /* Creates the scrollbar! */
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-right: 10px; /* Space for the scrollbar */
+}
+
+/* Custom Webkit Scrollbar */
+.blogs-rows::-webkit-scrollbar {
+  width: 6px;
+}
+.blogs-rows::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+.blogs-rows::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+.blogs-rows::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* --- Blog Row Items --- */
+.blog-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0; /* Prevents rows from squishing */
+}
+
+.blog-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: #333;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.blog-row:hover {
+  background: #fafafa;
+  border-color: #bbb;
+}
+
+.blog-row:hover::before {
+  opacity: 1;
+}
+
+.blog-row-content {
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.blog-row-content h3 {
+  margin: 0 0 0.4rem 0;
+  color: #333;
+  font-size: 0.95rem;
+  font-weight: 600;
+  word-wrap: break-word;
+}
+
+.blog-meta {
+  margin: 0;
+  color: #888;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.section-badge {
+  display: inline-block;
+  background: #f0f0f0;
+  color: #555;
+  padding: 0.35rem 0.7rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  border: 1px solid #e0e0e0;
+}
+
+.edit-btn {
+  flex-shrink: 0;
+  padding: 0.65rem 1.1rem;
+  background: #000;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.edit-btn:hover {
+  background: #333;
 }
 
 .blogs-placeholder {
   text-align: center;
-  padding: 3rem 2rem;
-  border: 2px dashed #ddd;
+  padding: 2.5rem 2rem;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
-  background: #f9f9f9;
-}
-
-.blogs-placeholder p {
+  background: #fafafa;
   color: #999;
-  margin: 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  justify-content: center; /* Centers placeholder text vertically */
 }
 
-@media (max-width: 768px) {
-  .profile-header {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
+.placeholder-icon,
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 1rem;
+}
 
+.placeholder-icon {
+  color: #ddd;
+}
+
+.loading-spinner {
+  color: #333;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
   .profile-header-content {
     flex-direction: column;
-    align-items: center;
-    width: 100%;
   }
 
-  .profile-header-actions {
-    width: 100%;
-    flex-direction: row;
-  }
-
-  .btn-edit {
-    flex: 1;
-  }
-
-  .profile-stats {
+  .profile-columns {
     flex-direction: column;
-    gap: 1rem;
+    height: auto; /* Remove fixed height on mobile */
   }
 
-  .stat {
-    padding: 1.5rem;
+  .profile-column {
+    width: 100%;
+    height: 500px; /* Give a fixed height to columns on mobile so they still scroll */
+    padding: 1.25rem;
   }
 
-  .profile-info h1 {
-    font-size: 1.5rem;
+  .blog-row {
+    flex-direction: row;
+    padding: 0.75rem 0.8rem;
   }
 }

@@ -34,6 +34,8 @@ const ReadBlog = () => {
         setError(null);
         const response = await blogAPI.getById(blogId);
         if (response.data.success) {
+          console.log("[READ BLOG] Blog fetched:", response.data.blog);
+          console.log("[READ BLOG] Sections:", response.data.blog.sections);
           setBlog(response.data.blog);
           setLikeCount(response.data.blog.likesCount || 0);
           setViews(response.data.blog.views || 0);
@@ -412,6 +414,44 @@ const ReadBlog = () => {
                 <span className="text-sm font-medium">Share</span>
               </button>
             </div>
+
+            {/* Blog Sections - if sections exist */}
+            {blog.sections && blog.sections.length > 0 && (
+              <div className="mt-10 pt-6 border-t border-border">
+                <h3 className="font-display text-lg font-bold mb-4">
+                  Blog Sections ({blog.sections.length})
+                </h3>
+                <div className="space-y-3">
+                  {blog.sections.map((section, idx) => (
+                    <div
+                      key={section.sectionId}
+                      className="p-3 bg-muted rounded-lg border border-border"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-foreground">
+                              {section.title || `Section ${idx + 1}`}
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded bg-primary/10 text-primary capitalize">
+                              {section.status}
+                            </span>
+                          </div>
+                          {section.assignedTo && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Assigned to: <strong>{section.assignedTo}</strong>
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          #{section.seqNo}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </article>
 
           {/* Sidebar */}

@@ -31,7 +31,7 @@ export default function BlogCardExplore({ blog, index = 0 }) {
 
   return (
     <Link
-      to={`/blog/${blogId}`}
+      to={`/read/${blogId}`}
       className="group block glass-card rounded-xl overflow-hidden hover:shadow-gold transition-all duration-500"
       style={{ animation: `slide-up 0.6s ease-out ${index * 0.15}s both` }}
     >

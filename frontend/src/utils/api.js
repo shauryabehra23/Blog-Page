@@ -65,6 +65,11 @@ export const blogAPI = {
   getExplore: (page = 1, sortBy = "newest") =>
     apiClient.get("/blogs/explore", { params: { page, sortBy } }),
   getById: (id) => apiClient.get(`/blogs/${id}`),
+  getForEdit: (id) => apiClient.get(`/blogs/${id}/edit-access`),
+  getUserBlogs: (userId, page = 1) =>
+    apiClient.get(`/blogs/user/${userId}`, { params: { page } }),
+  getUserCollaboratingBlogs: (userId, page = 1) =>
+    apiClient.get(`/blogs/user/${userId}/collaborating`, { params: { page } }),
   likeBlog: (id) => apiClient.post(`/blogs/${id}/like`),
   getLikeStatus: (id) => apiClient.get(`/blogs/${id}/like/status`),
 };

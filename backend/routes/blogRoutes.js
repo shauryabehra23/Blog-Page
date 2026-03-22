@@ -4,6 +4,9 @@ const {
   createBlog,
   getNextBlogs,
   getBlog,
+  getBlogForEdit,
+  getUserBlogs,
+  getUserCollaboratingBlogs,
   seedBlogs,
   toggleLike,
   getLikeStatus,
@@ -25,6 +28,27 @@ app.get("/explore", getNextBlogs);
 
 // Seed sample blogs (requires authentication - for admin use only)
 app.get("/seed", tokenAuthMw, seedBlogs);
+
+// ✅ DEBUG: Check all blogs in database
+app.get("/debug/all-blogs", async (req, res) => {
+  try {
+    const Blog = require("../models/Blog");
+    const blogs = await Blog.find().select("_id author title createdAt");
+    console.log("[DEBUG] Total blogs in DB:", blogs.length);
+    res.json({ count: blogs.length, blogs });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ GET: User's authored blogs (must come before /:id)
+app.get("/user/:userId", getUserBlogs);
+
+// ✅ GET: Blogs user is collaborating on (must come before /:id)
+app.get("/user/:userId/collaborating", getUserCollaboratingBlogs);
+
+// ✅ ADD: Get blog for editing with role-based access (must come before /:id)
+app.get("/:id/edit-access", checkTokenMw, getBlogForEdit);
 
 // Get a single blog by ID
 app.get("/:id", getBlog);

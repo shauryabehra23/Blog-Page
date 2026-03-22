@@ -15,11 +15,21 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
-  console.log("\n--- [COLLAB - sendCollaborationInvites] START ---");
+  console.log(
+    "\n========= [COLLAB - sendCollaborationInvites] START =========",
+  );
+  console.log("[COLLAB] Blog ID:", blogId);
+  console.log("[COLLAB] Blog Owner:", blogOwner?.email);
+  console.log("[COLLAB] Received invites count:", collabInvites?.length || 0);
 
   try {
     const blog = await Blog.findById(blogId).populate("author", "name email");
-    if (!blog) throw new Error("Blog not found");
+    if (!blog) {
+      console.error("[COLLAB] ❌ Blog not found:", blogId);
+      throw new Error("Blog not found");
+    }
+
+    console.log("[COLLAB] ✅ Blog loaded:", blog.title);
 
     const results = [];
 
@@ -31,15 +41,20 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
       // Define 'email' clearly at the top of the loop
       const email = rawEmail?.trim() || "";
 
-      console.log(`\n[COLLAB] --- Processing email: ${email} ---`);
+      console.log(`\n[COLLAB] >>> Processing invite for: ${email}`);
+      console.log(
+        `  Section: "${sectionTitle}" (ID: ${sectionId}, Seq: ${seqNo})`,
+      );
 
       // 1. Validation Checks
       if (!email) {
+        console.warn("[COLLAB] ⚠️  SKIP: Empty email");
         results.push({ email: "missing", status: "skipped_empty" });
         continue;
       }
 
       if (email === blogOwner.email) {
+        console.warn("[COLLAB] ⚠️  SKIP: Email matches blog owner");
         results.push({ email, status: "skipped_self" });
         continue;
       }
@@ -51,6 +66,7 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
       });
 
       if (existing) {
+        console.warn("[COLLAB] ⚠️  SKIP: Already invited", existing._id);
         results.push({
           email,
           status: "already_invited",
@@ -59,26 +75,35 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
         continue;
       }
 
-      // 3. Generate Token and Save
+      // 3. Find collaborator user by email (if exists) and Generate Token
+      const collaboratorUser = await User.findOne({ email });
+      console.log(
+        "[COLLAB] Collaborator user lookup:",
+        collaboratorUser ? "✅ Found" : "⚠️  Not registered yet",
+      );
+
       const inviteToken = crypto.randomBytes(32).toString("hex");
       const collab = new CollaboratorBlog({
         blog: blogId,
         blogTitle: blog.title,
-        collaboratorEmail: email, // Use the 'email' variable we defined above
+        collaboratorEmail: email,
         sectionId,
         sectionTitle,
         seqNo,
+        // ✅ CORRECT: Store the AUTHOR's ID (who is inviting), not collaborator's ID
         user: blog.author._id,
         inviteToken,
         status: "pending",
       });
 
       await collab.save();
+      console.log("[COLLAB] ✅ CollaboratorBlog entry created:", collab._id);
 
       // 4. Send Email
       const acceptUrl = `${process.env.FRONTEND_URL}/accept-invite/${inviteToken}`;
 
       try {
+        console.log("[COLLAB] Sending email to:", email);
         await transporter.sendMail({
           from: `"Quillr Invites" <${process.env.EMAIL_USER}>`,
           replyTo: blogOwner.email,
@@ -93,8 +118,14 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
             </div>
           `,
         });
+        console.log("[COLLAB] ✅ Email sent successfully to:", email);
         results.push({ email, status: "sent", inviteId: collab._id });
       } catch (emailError) {
+        console.error(
+          "[COLLAB] ❌ Email failed for:",
+          email,
+          emailError.message,
+        );
         results.push({
           email,
           status: "email_failed",
@@ -103,9 +134,15 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
       }
     }
 
+    console.log("\n[COLLAB] ========= FINAL RESULTS =========");
+    console.log("[COLLAB] Total processed:", results.length);
+    results.forEach((r) => {
+      console.log(`  ${r.email}: ${r.status}`);
+    });
+
     return results;
   } catch (error) {
-    console.error("[COLLAB] FATAL ERROR:", error);
+    console.error("\n[COLLAB] ❌ FATAL ERROR:", error.message);
     throw error;
   }
 };

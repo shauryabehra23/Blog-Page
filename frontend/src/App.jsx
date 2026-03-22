@@ -40,8 +40,8 @@ function App() {
           />
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/read/:blogId" element={<ReadBlogPage />} />
           <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
-          <Route path="/blog/:blogId" element={<ReadBlogPage />} />
           <Route
             path="/add-blog"
             element={
