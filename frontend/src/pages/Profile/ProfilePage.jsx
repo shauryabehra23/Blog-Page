@@ -19,6 +19,12 @@ export default function ProfilePage() {
   const fileInputRef = useRef(null);
   const isOwnProfile = !userId;
 
+  // Separate published and draft blogs
+  const publishedBlogs = authoredBlogs.filter(
+    (blog) => blog.status === "published",
+  );
+  const draftBlogs = authoredBlogs.filter((blog) => blog.status === "draft");
+
   // Get the user ID to use for fetching blogs, relying primarily on URL or fetched user profile
   const userIdForBlogs = userId || user?._id || authUser?._id;
 
@@ -219,7 +225,9 @@ export default function ProfilePage() {
           <div className="column-header">
             <BookOpen className="column-icon" />
             <h2>
-              {isOwnProfile ? "My Authored Blogs" : `${user.name}'s Blogs`}
+              {isOwnProfile
+                ? "My Published Blogs"
+                : `${user.name}'s Published Blogs`}
             </h2>
           </div>
           {blogsLoading ? (
@@ -227,14 +235,14 @@ export default function ProfilePage() {
               <Loader className="loading-spinner" />
               <p>Loading blogs...</p>
             </div>
-          ) : authoredBlogs.length === 0 ? (
+          ) : publishedBlogs.length === 0 ? (
             <div className="blogs-placeholder">
               <BookOpen className="placeholder-icon" />
-              <p>No blogs yet</p>
+              <p>No published blogs yet</p>
             </div>
           ) : (
             <div className="blogs-rows">
-              {authoredBlogs.map((blog) => (
+              {publishedBlogs.map((blog) => (
                 <div key={blog._id} className="blog-row">
                   <div
                     className="blog-row-content"
@@ -249,7 +257,45 @@ export default function ProfilePage() {
                         ` • ${blog.sections.length} sections`}
                     </p>
                   </div>
-                  {isOwnProfile && (
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {isOwnProfile && (
+          <div className="profile-column">
+            <div className="column-header">
+              <BookOpen className="column-icon" />
+              <h2>My Drafts</h2>
+            </div>
+            {blogsLoading ? (
+              <div className="blogs-placeholder">
+                <Loader className="loading-spinner" />
+                <p>Loading drafts...</p>
+              </div>
+            ) : draftBlogs.length === 0 ? (
+              <div className="blogs-placeholder">
+                <BookOpen className="placeholder-icon" />
+                <p>No drafts yet</p>
+              </div>
+            ) : (
+              <div className="blogs-rows">
+                {draftBlogs.map((blog) => (
+                  <div key={blog._id} className="blog-row">
+                    <div
+                      className="blog-row-content"
+                      onClick={() => navigate(`/read/${blog._id}`)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <h3>{blog.title}</h3>
+                      <p className="blog-meta">
+                        {blog.createdAt &&
+                          new Date(blog.createdAt).toLocaleDateString()}
+                        {blog.sections?.length > 0 &&
+                          ` • ${blog.sections.length} sections`}
+                      </p>
+                    </div>
                     <button
                       className="edit-btn"
                       onClick={(e) => {
@@ -260,12 +306,12 @@ export default function ProfilePage() {
                       <Edit2 size={16} />
                       Edit
                     </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {isOwnProfile && (
           <div className="profile-column">
@@ -285,36 +331,47 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="blogs-rows">
-                {collaboratingBlogs.map((blog) => (
-                  <div key={blog._id} className="blog-row">
-                    <div
-                      className="blog-row-content"
-                      onClick={() => navigate(`/read/${blog._id}`)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <h3>{blog.title}</h3>
-                      <p className="blog-meta">
-                        {blog.mySection && (
-                          <>
-                            <span className="section-badge">
-                              Section: {blog.mySection.sectionTitle}
-                            </span>
-                          </>
-                        )}
-                      </p>
+                {collaboratingBlogs.map((blog) => {
+                  console.log(
+                    "Collab blog:",
+                    blog.title,
+                    "mySection:",
+                    blog.mySection,
+                  );
+                  return (
+                    <div key={blog._id} className="blog-row">
+                      <div
+                        className="blog-row-content"
+                        onClick={() => navigate(`/read/${blog._id}`)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <h3>{blog.title}</h3>
+                        <p className="blog-meta">
+                          {blog.createdAt &&
+                            new Date(blog.createdAt).toLocaleDateString()}
+                          {blog.mySection && blog.mySection.sectionTitle && (
+                            <>
+                              {" • Section: "}
+                              <span className="section-badge">
+                                {blog.mySection.sectionTitle}
+                              </span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        className="edit-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/editor/${blog._id}`);
+                        }}
+                      >
+                        <Edit2 size={16} />
+                        Edit
+                      </button>
                     </div>
-                    <button
-                      className="edit-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/editor/${blog._id}`);
-                      }}
-                    >
-                      <Edit2 size={16} />
-                      Edit
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

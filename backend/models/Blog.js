@@ -26,6 +26,11 @@ const BlogSchema = new mongoose.Schema(
     ],
     category: { type: String, default: "other" },
     tags: [{ type: String }],
+    status: {
+      type: String,
+      enum: ["draft", "published"],
+      default: "draft",
+    },
 
     // Metrics used to calculate "Trending"
     views: { type: Number, default: 0 },

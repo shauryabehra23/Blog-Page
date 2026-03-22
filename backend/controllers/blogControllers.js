@@ -10,11 +10,12 @@ const createBlog = async (req, res) => {
 
   try {
     const userId = req.user._id;
-    const { title, content, sections, category, tags } = req.body;
+    const { title, content, sections, category, tags, status } = req.body;
 
     console.log("\n[BLOG CREATE] Payload Received:");
     console.log(" -> Title:", title);
     console.log(" -> Content exists:", !!content);
+    console.log(" -> Status:", status || "draft");
     console.log(" -> User ID:", userId);
 
     if (!title || !content) {
@@ -135,6 +136,7 @@ const createBlog = async (req, res) => {
             tag.trim(),
           )
         : [],
+      status: status || "draft",
     });
 
     console.log("[BLOG CREATE] Blog object created:");

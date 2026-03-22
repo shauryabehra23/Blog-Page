@@ -1,5 +1,5 @@
 .profile-container {
-  max-width: 1400px;
+  width: 90vw;
   margin: 2rem auto;
   padding: 0 1rem;
   background: #ffffff;
@@ -19,7 +19,7 @@
   display: flex;
   gap: 2rem;
   align-items: flex-start;
-  margin-bottom: 1.5rem;
+  margin: auto;
 }
 
 .profile-avatar {
@@ -120,24 +120,28 @@
   font-weight: 500;
 }
 
-/* --- Two Column Layout & Scrolling --- */
+/* --- Three Column Layout & Scrolling --- */
+/* --- Three Column Layout & Scrolling --- */
 .profile-columns {
-  display: flex;
+  display: flex; /* Swapped back to flex! */
   gap: 30px;
   margin-top: 30px;
   margin-bottom: 30px;
-  height: 75vh; /* This dictates how tall the scrollable boxes are */
+  height: 75vh;
   min-height: 450px;
 }
 
 .profile-column {
-  flex: 1; /* Makes both columns equal width */
+  flex: 1; /* Makes columns share space equally. 1 col = 100%, 3 cols = 33% each */
+  min-width: 0; /* CRITICAL: Prevents flex children from stretching past their limits */
   background: #ffffff;
   padding: 2rem;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
   display: flex;
-  flex-direction: column; /* Stacks header above scrolling blogs */
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden; /* Keeps the scroll locked inside */
 }
 
 .column-header {
@@ -145,7 +149,7 @@
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
-  flex-shrink: 0; /* Prevents header from shrinking when blogs fill up */
+  flex-shrink: 0;
 }
 
 .column-icon {
@@ -164,12 +168,12 @@
 /* --- The Scrollable Area --- */
 .blogs-rows,
 .blogs-placeholder {
-  flex: 1; /* Forces this div to take up all remaining space in the column */
-  overflow-y: auto; /* Creates the scrollbar! */
+  flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding-right: 10px; /* Space for the scrollbar */
+  padding-right: 10px;
 }
 
 /* Custom Webkit Scrollbar */
@@ -200,7 +204,7 @@
   background: #ffffff;
   position: relative;
   overflow: hidden;
-  flex-shrink: 0; /* Prevents rows from squishing */
+  flex-shrink: 0;
 }
 
 .blog-row::before {
@@ -283,7 +287,7 @@
   background: #fafafa;
   color: #999;
   font-size: 0.95rem;
-  justify-content: center; /* Centers placeholder text vertically */
+  justify-content: center;
 }
 
 .placeholder-icon,
@@ -312,19 +316,20 @@
 }
 
 /* --- Mobile Responsiveness --- */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .profile-header-content {
     flex-direction: column;
   }
 
   .profile-columns {
+    display: flex;
     flex-direction: column;
-    height: auto; /* Remove fixed height on mobile */
+    height: auto;
   }
 
   .profile-column {
     width: 100%;
-    height: 500px; /* Give a fixed height to columns on mobile so they still scroll */
+    height: 500px;
     padding: 1.25rem;
   }
 

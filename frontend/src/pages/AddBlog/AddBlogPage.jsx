@@ -265,11 +265,12 @@ export default function AddBlogPage() {
     input.click();
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, blogStatus) => {
     e.preventDefault();
 
     console.log("\n========== [AddBlogPage - handleSubmit] START ==========");
     console.log("[FORM SUBMISSION] Form Data:", formData);
+    console.log("[FORM SUBMISSION] Blog Status:", blogStatus);
     console.log("[FORM SUBMISSION] Sections Raw:", sections);
     console.log(
       "[FORM SUBMISSION] Editor Content (from formData):",
@@ -370,6 +371,7 @@ export default function AddBlogPage() {
       formDataToSend.append("title", formData.title);
       formDataToSend.append("category", formData.category);
       formDataToSend.append("tags", formData.tags);
+      formDataToSend.append("status", blogStatus);
 
       // ✅ CRITICAL: Send the editor content
       console.log(
@@ -413,7 +415,11 @@ export default function AddBlogPage() {
           response.data.invites,
         );
 
-        setSuccessMessage("Blog published successfully!");
+        setSuccessMessage(
+          blogStatus === "published"
+            ? "Blog published successfully!"
+            : "Draft saved successfully!",
+        );
         setTimeout(() => {
           navigate("/explore");
         }, 1500);
@@ -785,21 +791,36 @@ export default function AddBlogPage() {
             </div>
           )}
 
-          <button
-            type="submit"
-            className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest rounded-lg shadow-lg transition duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={
-              blogEditor.storage.characterCount.characters() > limit ||
-              isLoading ||
-              uploadingImages
-            }
-          >
-            {isLoading
-              ? "Publishing..."
-              : uploadingImages
-                ? "Uploading Images..."
-                : "Publish Blog"}
-          </button>
+          <div className="flex gap-3 w-full">
+            <button
+              type="submit"
+              onClick={(e) => handleSubmit(e, "draft")}
+              className="flex-1 py-4 px-6 bg-gray-600 hover:bg-gray-700 text-white font-black uppercase tracking-widest rounded-lg shadow-lg transition duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={
+                blogEditor.storage.characterCount.characters() > limit ||
+                isLoading ||
+                uploadingImages
+              }
+            >
+              {isLoading && false ? "Saving..." : "Save Draft"}
+            </button>
+            <button
+              type="submit"
+              onClick={(e) => handleSubmit(e, "published")}
+              className="flex-1 py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest rounded-lg shadow-lg transition duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={
+                blogEditor.storage.characterCount.characters() > limit ||
+                isLoading ||
+                uploadingImages
+              }
+            >
+              {isLoading
+                ? "Publishing..."
+                : uploadingImages
+                  ? "Uploading Images..."
+                  : "Publish"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
