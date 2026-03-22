@@ -162,36 +162,38 @@ export default function ProfilePage() {
   return (
     <div className="profile-container">
       <div className="profile-header">
-        <div className="profile-header-content">
-          <img
-            src={user.profilePic || "https://via.placeholder.com/150"}
-            alt={user.name}
-            className="profile-avatar"
-          />
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleProfilePicChange}
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            style={{ display: "none" }}
-          />
-          <div className="profile-info">
-            <h1>{user.name}</h1>
-            <p className="email">{user.email}</p>
+        <div className="flex">
+          <div className="profile-header-content">
+            <img
+              src={user.profilePic || "https://via.placeholder.com/150"}
+              alt={user.name}
+              className="profile-avatar"
+            />
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleProfilePicChange}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ display: "none" }}
+            />
+            <div className="profile-info">
+              <h1>{user.name}</h1>
+              <p className="email">{user.email}</p>
+            </div>
           </div>
+          {isOwnProfile && (
+            <div className="profile-header-actions flex flex-col">
+              <button className="btn-edit">Edit UserName</button>
+              <button
+                className="btn-edit"
+                onClick={triggerFileInput}
+                disabled={uploading}
+              >
+                {uploading ? "Uploading..." : "Edit Profile Picture"}
+              </button>
+            </div>
+          )}
         </div>
-        {isOwnProfile && (
-          <div className="profile-header-actions">
-            <button className="btn-edit">Edit UserName</button>
-            <button
-              className="btn-edit"
-              onClick={triggerFileInput}
-              disabled={uploading}
-            >
-              {uploading ? "Uploading..." : "Edit Profile Picture"}
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="profile-stats">
