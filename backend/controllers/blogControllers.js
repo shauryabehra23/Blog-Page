@@ -641,14 +641,15 @@ const getBlogForEdit = async (req, res) => {
       });
     }
 
-    // Check if user is a collaborator
+    // Check if user is a collaborator with accepted status
     const Collaborator = require("../models/Collaborator-Blog");
-    const collaboratorRecord = await Collaborator.findOne({
-      blogId: id,
-      "sections.status": "accepted",
+    const collaboratorRecords = await Collaborator.find({
+      blog: id,
+      user: userId,
+      status: "accepted",
     });
 
-    if (!collaboratorRecord) {
+    if (collaboratorRecords.length === 0) {
       console.log("[BLOG EDIT] ❌ User lacks permissions");
       return res.status(403).json({
         success: false,
@@ -656,24 +657,25 @@ const getBlogForEdit = async (req, res) => {
       });
     }
 
-    // Filter blog to show only accepted sections for collaborator
-    const acceptedSections = blog.sections.filter((section) =>
-      collaboratorRecord.sections.some(
-        (collabSection) =>
-          collabSection.sectionId === section.sectionId &&
-          collabSection.status === "accepted",
-      ),
+    // Get the sectionIds that this collaborator is assigned to
+    const assignedSectionIds = collaboratorRecords.map(
+      (record) => record.sectionId,
+    );
+
+    // Filter blog to show only assigned sections for collaborator
+    const assignedSections = blog.sections.filter((section) =>
+      assignedSectionIds.includes(section.sectionId),
     );
 
     const filteredBlog = {
       ...blog.toObject(),
-      sections: acceptedSections,
+      sections: assignedSections,
       _restrictedTo: "assigned-sections-only",
     };
 
     console.log(
       "[BLOG EDIT] ✅ Collaborator access granted for",
-      acceptedSections.length,
+      assignedSections.length,
       "sections",
     );
     return res.status(200).json({

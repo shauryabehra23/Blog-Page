@@ -300,7 +300,7 @@ export default function ProfilePage() {
                       className="edit-btn"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/editor/${blog._id}`);
+                        navigate(`/author-edit/${blog._id}`);
                       }}
                     >
                       <Edit2 size={16} />
@@ -363,7 +363,9 @@ export default function ProfilePage() {
                         className="edit-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/editor/${blog._id}`);
+                          navigate(
+                            `/collab-edit/${blog._id}/${blog.mySection?.sectionId}`,
+                          );
                         }}
                       >
                         <Edit2 size={16} />

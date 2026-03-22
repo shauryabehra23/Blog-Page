@@ -9,6 +9,8 @@ import ExplorePage from "./pages/Explore/ExplorePage";
 import AddBlogPage from "./pages/AddBlog/AddBlogPage";
 import ReadBlogPage from "./pages/ReadBlog/ReadBlogPage";
 import AcceptInvitePage from "./pages/AcceptInvite/AcceptInvitePage";
+import AuthorEditPage from "./pages/AuthorEdit/AuthorEditPage";
+import CollaboratorEditPage from "./pages/CollaboratorEdit/CollaboratorEditPage";
 import { AuthContext } from "./context/AuthContext";
 import "./App.css";
 
@@ -46,6 +48,22 @@ function App() {
             path="/add-blog"
             element={
               isAuthenticated ? <AddBlogPage /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/author-edit/:blogId"
+            element={
+              isAuthenticated ? <AuthorEditPage /> : <Navigate to="/login" />
+            }
+          />
+          <Route
+            path="/collab-edit/:blogId/:sectionId"
+            element={
+              isAuthenticated ? (
+                <CollaboratorEditPage />
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
         </Routes>

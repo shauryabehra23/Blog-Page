@@ -72,6 +72,17 @@ export const blogAPI = {
     apiClient.get(`/blogs/user/${userId}/collaborating`, { params: { page } }),
   likeBlog: (id) => apiClient.post(`/blogs/${id}/like`),
   getLikeStatus: (id) => apiClient.get(`/blogs/${id}/like/status`),
+  // Update entire blog (for authors)
+  updateBlog: (id, blogData) => apiClient.put(`/blogs/${id}`, blogData),
+  // Update section content (for collaborators)
+  updateSectionContent: (blogId, sectionId, sectionData) =>
+    apiClient.put(`/blogs/${blogId}/sections/${sectionId}`, sectionData),
+  // Request approval for a section
+  requestSectionApproval: (blogId, sectionId, sectionData) =>
+    apiClient.post(
+      `/blogs/${blogId}/sections/${sectionId}/request-approval`,
+      sectionData,
+    ),
 };
 
 // Comment API calls
