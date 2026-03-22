@@ -355,7 +355,7 @@ export default function AuthorEditPage() {
       // STEP 2: Instant UI Update (Column 2)
       // Remove the approved section from pendingSections so it disappears from review panel
       setPendingSections((prev) =>
-        prev.filter((sec) => sec.sectionId !== section.sectionId)
+        prev.filter((sec) => sec.sectionId !== section.sectionId),
       );
       console.log("[APPROVE] ✓ Removed from pending sections");
 
