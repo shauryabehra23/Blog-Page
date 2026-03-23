@@ -634,6 +634,10 @@ const getBlogForEdit = async (req, res) => {
     // Check if user is the author
     if (blog.author._id.toString() === userId.toString()) {
       console.log("[BLOG EDIT] ✅ User is author - granting full access");
+      console.log(
+        "[BLOG EDIT] Returning blog with content:",
+        blog.content ? "EXISTS" : "MISSING",
+      );
       return res.status(200).json({
         success: true,
         blog,
@@ -860,6 +864,10 @@ const updateBlog = async (req, res) => {
     console.log("[BLOG UPDATE] Blog ID:", blogId);
     console.log("[BLOG UPDATE] User ID:", userId);
     console.log("[BLOG UPDATE] Status:", status || "draft");
+    console.log(
+      "[BLOG UPDATE] Content received:",
+      content ? `${JSON.stringify(content).substring(0, 100)}...` : "EMPTY",
+    );
 
     if (!title && !content) {
       return res.status(400).json({
@@ -924,6 +932,9 @@ const updateBlog = async (req, res) => {
     if (status) updateData.status = status;
     if (frontPic) updateData.frontPic = frontPic;
 
+    console.log("[BLOG UPDATE] updateData keys:", Object.keys(updateData));
+    console.log("[BLOG UPDATE] Will save content?:", !!updateData.content);
+
     // Update the blog
     const updatedBlog = await Blog.findByIdAndUpdate(blogId, updateData, {
       new: true,
@@ -950,21 +961,16 @@ const updateSectionContent = async (req, res) => {
   try {
     const { blogId, sectionId } = req.params;
     const userId = req.user._id;
-    const { content, status } = req.body;
+    const { approvedContent, draftContent, status, feedback } = req.body;
 
-    console.log("\n[SECTION UPDATE] Updating section content");
+    console.log("\n[SECTION UPDATE - DUAL WORKFLOW]");
     console.log("[SECTION UPDATE] Blog ID:", blogId);
     console.log("[SECTION UPDATE] Section ID:", sectionId);
-    console.log("[SECTION UPDATE] Status:", status);
     console.log("[SECTION UPDATE] User ID:", userId);
-
-    // Validate status
-    if (!status || !["in-progress", "pending"].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status. Must be 'in-progress' or 'pending'",
-      });
-    }
+    console.log("[SECTION UPDATE] Action:", status);
+    console.log("[SECTION UPDATE] Has approvedContent:", !!approvedContent);
+    console.log("[SECTION UPDATE] Has draftContent:", !!draftContent);
+    console.log("[SECTION UPDATE] Has feedback:", !!feedback);
 
     // Find the blog
     const blog = await Blog.findById(blogId);
@@ -975,49 +981,144 @@ const updateSectionContent = async (req, res) => {
       });
     }
 
-    // Check if user is a collaborator with accepted status on this section
-    const Collaborator = require("../models/Collaborator-Blog");
-    const collaborator = await Collaborator.findOne({
-      blog: blogId,
-      user: userId,
-      sectionId: sectionId,
-      status: "accepted",
-    });
+    // DETERMINE REQUEST TYPE & AUTHORIZATION
+    // If approvedContent or feedback is present → AUTHOR workflow (approve/reject)
+    // Otherwise → COLLABORATOR workflow (save draft)
+    const isAuthorWorkflow =
+      !!approvedContent ||
+      !!feedback ||
+      status === "approved" ||
+      status === "rejected";
 
-    if (!collaborator) {
-      console.log("[SECTION UPDATE] ❌ User not authorized for this section");
-      return res.status(403).json({
+    if (isAuthorWorkflow) {
+      // AUTHOR WORKFLOW: Only blog author can use approve/reject
+      if (blog.author.toString() !== userId.toString()) {
+        console.log(
+          "[SECTION UPDATE] ❌ User is not the blog author (author workflow)",
+        );
+        return res.status(403).json({
+          success: false,
+          message: "Only the blog author can approve or reject sections",
+        });
+      }
+    } else {
+      // COLLABORATOR WORKFLOW: Only collaborator with accepted status can save draft
+      const Collaborator = require("../models/Collaborator-Blog");
+      const collaborator = await Collaborator.findOne({
+        blog: blogId,
+        user: userId,
+        sectionId: sectionId,
+        status: "accepted",
+      });
+
+      if (!collaborator) {
+        console.log(
+          "[SECTION UPDATE] ❌ User is not an accepted collaborator on this section",
+        );
+        return res.status(403).json({
+          success: false,
+          message: "You don't have permission to edit this section",
+        });
+      }
+    }
+
+    // Find the section
+    const section = blog.sections.find((sec) => sec.sectionId === sectionId);
+    if (!section) {
+      return res.status(404).json({
         success: false,
-        message: "You don't have permission to edit this section",
+        message: "Section not found",
       });
     }
 
     // Parse content if it's a string
-    let parsedContent = content;
-    if (typeof content === "string") {
+    let parsedApprovedContent = approvedContent;
+    let parsedDraftContent = draftContent;
+
+    if (approvedContent && typeof approvedContent === "string") {
       try {
-        parsedContent = JSON.parse(content);
+        parsedApprovedContent = JSON.parse(approvedContent);
       } catch (parseError) {
-        console.error("[SECTION UPDATE] Content Parse Error:", parseError);
+        console.error(
+          "[SECTION UPDATE] Approved content parse error:",
+          parseError,
+        );
         return res.status(400).json({
           success: false,
-          message: "Invalid content format",
+          message: "Invalid approved content format",
           error: parseError.message,
         });
       }
     }
 
-    // Use MongoDB positional operator ($) to update only the specific section
+    if (draftContent && typeof draftContent === "string") {
+      try {
+        parsedDraftContent = JSON.parse(draftContent);
+      } catch (parseError) {
+        console.error(
+          "[SECTION UPDATE] Draft content parse error:",
+          parseError,
+        );
+        return res.status(400).json({
+          success: false,
+          message: "Invalid draft content format",
+          error: parseError.message,
+        });
+      }
+    }
+
+    // Build update object based on action
+    const updateData = {
+      "sections.$.updatedAt": new Date(),
+    };
+
+    // APPROVE ACTION: Sync both content and save feedback
+    if (status === "approved") {
+      console.log(
+        "[SECTION UPDATE] ACTION: APPROVE - syncing both content states with feedback",
+      );
+      updateData["sections.$.approvedContent"] =
+        parsedDraftContent || section.draftContent;
+      updateData["sections.$.draftContent"] =
+        parsedDraftContent || section.draftContent;
+      updateData["sections.$.status"] = "approved";
+      updateData["sections.$.feedback"] = feedback || "";
+    }
+    // REJECT ACTION: Update draft and feedback, leave approvedContent intact
+    else if (status === "rejected") {
+      console.log(
+        "[SECTION UPDATE] ACTION: REJECT - sending tweaked draft back to collaborator",
+      );
+      updateData["sections.$.draftContent"] =
+        parsedDraftContent || section.draftContent;
+      updateData["sections.$.status"] = "rejected";
+      updateData["sections.$.feedback"] = feedback || "";
+    }
+    // GENERAL UPDATE: Handle individual field updates
+    else {
+      console.log("[SECTION UPDATE] ACTION: GENERAL UPDATE");
+      if (approvedContent !== undefined) {
+        updateData["sections.$.approvedContent"] = parsedApprovedContent;
+      }
+      if (draftContent !== undefined) {
+        updateData["sections.$.draftContent"] = parsedDraftContent;
+      }
+      if (status !== undefined) {
+        updateData["sections.$.status"] = status;
+      }
+      if (feedback !== undefined) {
+        updateData["sections.$.feedback"] = feedback;
+      }
+    }
+
+    // Perform the update
     const updateResult = await Blog.updateOne(
       {
         _id: blogId,
         "sections.sectionId": sectionId,
       },
       {
-        $set: {
-          "sections.$.content": parsedContent,
-          "sections.$.status": status,
-        },
+        $set: updateData,
       },
     );
 
@@ -1036,11 +1137,11 @@ const updateSectionContent = async (req, res) => {
 
     console.log(
       "[SECTION UPDATE] ✅ Section updated successfully - Status:",
-      status,
+      updatedSection.status,
     );
     return res.status(200).json({
       success: true,
-      message: "Section updated successfully",
+      message: `Section ${status} successfully`,
       section: updatedSection,
     });
   } catch (error) {
@@ -1053,13 +1154,13 @@ const updateSectionContent = async (req, res) => {
   }
 };
 
-// Approve section content (Author approves collaborator's submitted section)
+// Approve section content (Author approves collaborator's pending draft)
 const approveSectionContent = async (req, res) => {
   try {
     const { blogId, sectionId } = req.params;
     const userId = req.user._id;
 
-    console.log("\n[SECTION APPROVE] Approving section");
+    console.log("\n[SECTION APPROVE] Approving section draft");
     console.log("[SECTION APPROVE] Blog ID:", blogId);
     console.log("[SECTION APPROVE] Section ID:", sectionId);
     console.log("[SECTION APPROVE] User ID:", userId);
@@ -1099,7 +1200,7 @@ const approveSectionContent = async (req, res) => {
       });
     }
 
-    // Update section status to 'approved'
+    // Move draftContent to approvedContent and clear draftContent
     const updateResult = await Blog.updateOne(
       {
         _id: blogId,
@@ -1107,7 +1208,11 @@ const approveSectionContent = async (req, res) => {
       },
       {
         $set: {
+          "sections.$.approvedContent": section.draftContent,
+          "sections.$.draftContent": null,
           "sections.$.status": "approved",
+          "sections.$.feedback": "",
+          "sections.$.updatedAt": new Date(),
         },
       },
     );
@@ -1141,6 +1246,195 @@ const approveSectionContent = async (req, res) => {
   }
 };
 
+// Reject section draft (Author rejects collaborator's pending draft)
+const rejectSectionContent = async (req, res) => {
+  try {
+    const { blogId, sectionId } = req.params;
+    const userId = req.user._id;
+    const { authorFeedback } = req.body;
+
+    console.log("\n[SECTION REJECT] Rejecting section draft");
+    console.log("[SECTION REJECT] Blog ID:", blogId);
+    console.log("[SECTION REJECT] Section ID:", sectionId);
+    console.log("[SECTION REJECT] User ID:", userId);
+    console.log("[SECTION REJECT] Feedback:", authorFeedback || "(none)");
+
+    // Find the blog
+    const blog = await Blog.findById(blogId);
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
+    }
+
+    // Check if user is the blog author
+    if (blog.author.toString() !== userId.toString()) {
+      console.log("[SECTION REJECT] ❌ User is not the blog author");
+      return res.status(403).json({
+        success: false,
+        message: "Only the blog author can reject sections",
+      });
+    }
+
+    // Find the section
+    const section = blog.sections.find((sec) => sec.sectionId === sectionId);
+    if (!section) {
+      return res.status(404).json({
+        success: false,
+        message: "Section not found",
+      });
+    }
+
+    // Check if section is in pending status
+    if (section.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: `Section must be in 'pending' status to reject. Current status: ${section.status}`,
+      });
+    }
+
+    // Update section: set status to "rejected" and update feedback
+    const updateResult = await Blog.updateOne(
+      {
+        _id: blogId,
+        "sections.sectionId": sectionId,
+      },
+      {
+        $set: {
+          "sections.$.status": "rejected",
+          "sections.$.feedback": authorFeedback || "",
+          "sections.$.updatedAt": new Date(),
+        },
+      },
+    );
+
+    if (updateResult.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Section not found",
+      });
+    }
+
+    // Fetch updated section to return
+    const updatedBlog = await Blog.findById(blogId);
+    const updatedSection = updatedBlog.sections.find(
+      (sec) => sec.sectionId === sectionId,
+    );
+
+    console.log("[SECTION REJECT] ✅ Section rejected successfully");
+    return res.status(200).json({
+      success: true,
+      message: "Section rejected successfully",
+      section: updatedSection,
+    });
+  } catch (error) {
+    console.error("[SECTION REJECT] Error:", error);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to reject section",
+      error: error.message,
+    });
+  }
+};
+
+// Save master edits (Author directly edits and saves approvedContent)
+const saveMasterContent = async (req, res) => {
+  try {
+    const { blogId, sectionId } = req.params;
+    const userId = req.user._id;
+    const { approvedContent } = req.body;
+
+    console.log("\n[SECTION SAVE-MASTER] Saving master content");
+    console.log("[SECTION SAVE-MASTER] Blog ID:", blogId);
+    console.log("[SECTION SAVE-MASTER] Section ID:", sectionId);
+    console.log("[SECTION SAVE-MASTER] User ID:", userId);
+
+    // Find the blog
+    const blog = await Blog.findById(blogId);
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog not found",
+      });
+    }
+
+    // Check if user is the blog author
+    if (blog.author.toString() !== userId.toString()) {
+      console.log("[SECTION SAVE-MASTER] ❌ User is not the blog author");
+      return res.status(403).json({
+        success: false,
+        message: "Only the blog author can edit master content",
+      });
+    }
+
+    // Find the section
+    const section = blog.sections.find((sec) => sec.sectionId === sectionId);
+    if (!section) {
+      return res.status(404).json({
+        success: false,
+        message: "Section not found",
+      });
+    }
+
+    // Parse approvedContent if it's a string
+    let parsedApprovedContent = approvedContent;
+    if (typeof approvedContent === "string") {
+      try {
+        parsedApprovedContent = JSON.parse(approvedContent);
+      } catch (parseError) {
+        console.error("[SECTION SAVE-MASTER] Content Parse Error:", parseError);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid content format",
+          error: parseError.message,
+        });
+      }
+    }
+
+    // Update section: save directly to approvedContent without changing status
+    const updateResult = await Blog.updateOne(
+      {
+        _id: blogId,
+        "sections.sectionId": sectionId,
+      },
+      {
+        $set: {
+          "sections.$.approvedContent": parsedApprovedContent,
+          "sections.$.updatedAt": new Date(),
+        },
+      },
+    );
+
+    if (updateResult.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Section not found",
+      });
+    }
+
+    // Fetch updated section to return
+    const updatedBlog = await Blog.findById(blogId);
+    const updatedSection = updatedBlog.sections.find(
+      (sec) => sec.sectionId === sectionId,
+    );
+
+    console.log("[SECTION SAVE-MASTER] ✅ Master content saved successfully");
+    return res.status(200).json({
+      success: true,
+      message: "Master content saved successfully",
+      section: updatedSection,
+    });
+  } catch (error) {
+    console.error("[SECTION SAVE-MASTER] Error:", error);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to save master content",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createBlog,
   getNextBlogs,
@@ -1151,6 +1445,8 @@ module.exports = {
   getUserCollaboratingBlogs,
   updateSectionContent,
   approveSectionContent,
+  rejectSectionContent,
+  saveMasterContent,
   seedBlogs,
   toggleLike,
   getLikeStatus,

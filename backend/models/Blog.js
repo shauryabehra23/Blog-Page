@@ -10,19 +10,23 @@ const BlogSchema = new mongoose.Schema(
     },
     title: { type: String, required: true },
     frontPic: { type: String, default: "" }, // Front cover picture URL
-    content: { type: Object, default: null }, // Tiptap JSON - main blog content
+    content: { type: Object, default: null }, // Tiptap JSON - author's main intro/outro text
     sections: [
       {
         sectionId: { type: String, required: true },
         title: { type: String, required: true }, // Section label/name
         assignedTo: { type: String }, // Collaborator email
         seqNo: { type: Number, default: 0 },
-        content: { type: Object, default: null }, // Tiptap JSON - section content
+        approvedContent: { type: Object, default: null }, // Tiptap JSON - official live version
+        draftContent: { type: Object, default: null }, // Tiptap JSON - collaborator sandbox edits
         status: {
           type: String,
-          enum: ["pending", "in-progress", "approved"],
-          default: "in-progress",
+          enum: ["pending", "in_progress", "approved", "rejected"],
+          default: "in_progress",
         },
+        feedback: { type: String, default: "" }, // Author feedback to collaborator
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now },
       },
     ],
     category: { type: String, default: "other" },

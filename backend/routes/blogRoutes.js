@@ -10,6 +10,8 @@ const {
   getUserCollaboratingBlogs,
   updateSectionContent,
   approveSectionContent,
+  rejectSectionContent,
+  saveMasterContent,
   seedBlogs,
   toggleLike,
   getLikeStatus,
@@ -69,6 +71,20 @@ app.post(
   "/:blogId/sections/:sectionId/approve",
   checkTokenMw,
   approveSectionContent,
+);
+
+// ✅ NEW: Reject section (author only)
+app.post(
+  "/:blogId/sections/:sectionId/reject",
+  checkTokenMw,
+  rejectSectionContent,
+);
+
+// ✅ NEW: Save master edits (author only)
+app.put(
+  "/:blogId/sections/:sectionId/save-master",
+  checkTokenMw,
+  saveMasterContent,
 );
 
 // Get a single blog by ID

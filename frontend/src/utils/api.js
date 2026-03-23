@@ -84,8 +84,23 @@ export const blogAPI = {
       sectionData,
     ),
   // Approve section content (for authors)
-  approveSectionContent: (blogId, sectionId) =>
-    apiClient.post(`/blogs/${blogId}/sections/${sectionId}/approve`),
+  approveSectionContent: (blogId, sectionId, approvalData) =>
+    apiClient.post(
+      `/blogs/${blogId}/sections/${sectionId}/approve`,
+      approvalData || {},
+    ),
+  // Reject section draft (for authors)
+  rejectSectionContent: (blogId, sectionId, rejectData) =>
+    apiClient.post(
+      `/blogs/${blogId}/sections/${sectionId}/reject`,
+      rejectData || {},
+    ),
+  // Save master content directly (for authors)
+  saveMasterContent: (blogId, sectionId, masterData) =>
+    apiClient.put(
+      `/blogs/${blogId}/sections/${sectionId}/save-master`,
+      masterData,
+    ),
 };
 
 // Comment API calls

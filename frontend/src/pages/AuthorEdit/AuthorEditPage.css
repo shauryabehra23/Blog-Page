@@ -648,6 +648,188 @@
   }
 }
 
+/* Sections Column - Right Side */
+.sections-column {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  padding: 20px;
+  position: sticky;
+  top: 100px;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sections-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 8px;
+}
+
+.sections-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.section-count {
+  background-color: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+}
+
+.sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sections-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sections-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.sections-list::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+.sections-list::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+.section-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background-color: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.section-item:hover {
+  background-color: #f5f5f5;
+  border-color: #3b82f6;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
+}
+
+.section-item.section-pending {
+  border-color: #ffd700;
+  background-color: #fffef5;
+}
+
+.section-item.section-pending:hover {
+  border-color: #ffb700;
+  box-shadow: 0 2px 6px rgba(255, 183, 0, 0.15);
+}
+
+.section-item.section-approved {
+  border-color: #86efac;
+  background-color: #f0fdf4;
+}
+
+.section-item.section-approved:hover {
+  border-color: #10b981;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
+}
+
+.section-item.section-rejected {
+  border-color: #fca5a5;
+  background-color: #fef2f2;
+}
+
+.section-item.section-rejected:hover {
+  border-color: #ef4444;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
+}
+
+.section-item.section-in_progress {
+  border-color: #93c5fd;
+  background-color: #f0f9ff;
+}
+
+.section-item.section-in_progress:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
+}
+
+.section-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.section-assigned {
+  font-size: 11px;
+  color: #666;
+  margin: 0;
+}
+
+.section-status {
+  flex-shrink: 0;
+}
+
+.edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  color: #3b82f6;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.edit-btn:hover {
+  background-color: #f0f7ff;
+  color: #2563eb;
+}
+
+.no-sections {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  text-align: center;
+  color: #999;
+}
+
+.no-sections p {
+  margin: 0;
+  font-size: 13px;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .author-edit-layout {

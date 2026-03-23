@@ -349,3 +349,42 @@
     font-size: 12px;
   }
 }
+
+/* Feedback Banner Styles */
+.feedback-banner {
+  padding: 16px;
+  margin-bottom: 24px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-left: 4px solid;
+}
+
+.banner-rejected {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+  color: #7f1d1d;
+}
+
+.banner-approved {
+  background-color: #f0fdf4;
+  border-color: #22c55e;
+  color: #14532d;
+}
+
+.banner-header {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0;
+  color: inherit;
+}
+
+.banner-content {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

@@ -6,9 +6,86 @@ import { generateHTML } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
-import { Clock, ChevronLeft, Eye } from "lucide-react";
+import {
+  Clock,
+  ChevronLeft,
+  Eye,
+  Heart,
+  MessageCircle,
+  Share2,
+  Send,
+  Bookmark,
+} from "lucide-react";
 import { Badge } from "../../components/ui/badge";
-import { Heart, MessageCircle, Share2, Send, Bookmark } from "lucide-react";
+
+// Helper function to convert TipTap content to HTML
+const generateRichTextHtml = (contentData) => {
+  if (!contentData) {
+    return "";
+  }
+
+  // Check if it's already a valid HTML string (contains HTML tags)
+  if (typeof contentData === "string") {
+    // Check if it contains HTML tags
+    const htmlRegex =
+      /<(p|h[1-6]|div|span|strong|em|img|a|ul|ol|li|blockquote|code|pre|br)[^>]*>/i;
+    if (htmlRegex.test(contentData)) {
+      // It's already HTML, return as-is
+      return contentData;
+    }
+
+    // Check if it's a URL (image or general URL)
+    const isUrl = contentData.match(/^https?:\/\//);
+    if (isUrl) {
+      const imageExtensions = [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".webp",
+        ".svg",
+        "cloudinary",
+        "imgix",
+      ];
+      const isImageUrl = imageExtensions.some((ext) =>
+        contentData.toLowerCase().includes(ext),
+      );
+
+      if (isImageUrl) {
+        return `<img src="${contentData}" alt="Blog image" class="max-w-full h-auto rounded-lg" />`;
+      } else {
+        return `<a href="${contentData}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${contentData}</a>`;
+      }
+    }
+
+    // Try to parse as JSON (TipTap format)
+    try {
+      const parsed = JSON.parse(contentData);
+      if (parsed && typeof parsed === "object" && parsed.type) {
+        const extensions = [StarterKit, Underline, Image];
+        return generateHTML(parsed, extensions);
+      }
+    } catch (err) {
+      // Not JSON, treat as plain text
+      return `<p>${contentData.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`;
+    }
+  }
+
+  // If it's already an object (TipTap JSON), convert to HTML
+  if (typeof contentData === "object" && contentData !== null) {
+    if (contentData.type) {
+      try {
+        const extensions = [StarterKit, Underline, Image];
+        return generateHTML(contentData, extensions);
+      } catch (err) {
+        console.error("Error converting TipTap JSON to HTML:", err);
+        return "";
+      }
+    }
+  }
+
+  return "";
+};
 
 const ReadBlog = () => {
   const { blogId } = useParams();
@@ -34,8 +111,6 @@ const ReadBlog = () => {
         setError(null);
         const response = await blogAPI.getById(blogId);
         if (response.data.success) {
-          console.log("[READ BLOG] Blog fetched:", response.data.blog);
-          console.log("[READ BLOG] Sections:", response.data.blog.sections);
           setBlog(response.data.blog);
           setLikeCount(response.data.blog.likesCount || 0);
           setViews(response.data.blog.views || 0);
@@ -67,7 +142,6 @@ const ReadBlog = () => {
         }
       } catch (err) {
         console.error("Error fetching comments:", err);
-        // Keep empty array on error
       } finally {
         setCommentsLoading(false);
       }
@@ -89,88 +163,25 @@ const ReadBlog = () => {
         }
       } catch (err) {
         console.error("Error fetching like status:", err);
-        // Don't show error to user - just keep like as false
       }
     };
 
     fetchLikeStatus();
   }, [blogId, isAuthenticated]);
 
-  // Convert JSON content to HTML using TipTap's generateHTML
-  // Also handles plain string content (e.g., from Postman with Cloudinary URL)
-  const contentHtml = useMemo(() => {
-    if (!blog?.content) {
-      return "";
-    }
+  // Convert JSON content to HTML using the helper function
+  const mainContentHtml = useMemo(
+    () => generateRichTextHtml(blog?.content),
+    [blog?.content],
+  );
 
-    // Handle plain string content (e.g., when using Postman with Cloudinary URL)
-    if (typeof blog.content === "string") {
-      // Check if it's a URL (image URL or general URL)
-      const isUrl = blog.content.match(/^https?:\/\//);
-
-      if (isUrl) {
-        // Check if it's an image URL
-        const imageExtensions = [
-          ".jpg",
-          ".jpeg",
-          ".png",
-          ".gif",
-          ".webp",
-          ".svg",
-          "cloudinary",
-          "imgix",
-        ];
-        const isImageUrl = imageExtensions.some((ext) =>
-          blog.content.toLowerCase().includes(ext),
-        );
-
-        if (isImageUrl) {
-          // Return as an image tag
-          return `<img src="${blog.content}" alt="Blog image" class="max-w-full h-auto rounded-lg" />`;
-        } else {
-          // Return as a link
-          return `<a href="${blog.content}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${blog.content}</a>`;
-        }
-      }
-
-      // Otherwise, return as plain text (escaped for HTML)
-      return `<p>${blog.content.replace(/</g, "<").replace(/>/g, ">")}</p>`;
-    }
-
-    let contentObj = blog.content;
-
-    // If content is a string, parse it as JSON
-    if (typeof blog.content === "string") {
-      try {
-        contentObj = JSON.parse(blog.content);
-      } catch (err) {
-        // Try unescaping if direct parsing fails
-        try {
-          const unescaped = blog.content.replace(/\\"/g, '"');
-          contentObj = JSON.parse(unescaped);
-        } catch (err2) {
-          console.error("Failed to parse content:", err2);
-          return "";
-        }
-      }
-    }
-
-    // Verify it's a valid TipTap document structure
-    if (!contentObj || typeof contentObj !== "object" || !contentObj.type) {
-      console.error("Content is not a valid TipTap document");
-      return "";
-    }
-
-    // If content is an object (JSON), convert to HTML
-    // IMPORTANT: Add Image extension to handle image nodes in TipTap JSON
-    try {
-      const extensions = [StarterKit, Underline, Image];
-      return generateHTML(contentObj, extensions);
-    } catch (err) {
-      console.error("Error converting JSON to HTML:", err);
-      return "";
-    }
-  }, [blog?.content]);
+  // Check if we have approved sections to render
+  const approvedSections = useMemo(() => {
+    if (!blog?.sections) return [];
+    return blog.sections
+      .filter((section) => section.status === "approved")
+      .sort((a, b) => a.seqNo - b.seqNo);
+  }, [blog?.sections]);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -179,7 +190,6 @@ const ReadBlog = () => {
 
   const calculateReadTime = (content) => {
     if (!content) return "1 min read";
-    // Estimate 200 words per minute
     const text =
       typeof content === "string" ? content : JSON.stringify(content);
     const wordCount = text.split(/\s+/).length;
@@ -215,7 +225,6 @@ const ReadBlog = () => {
       });
 
       if (response.data.success) {
-        // Add the new comment to the list
         setComments([response.data.comment, ...comments]);
         setNewComment("");
       }
@@ -231,15 +240,12 @@ const ReadBlog = () => {
   };
 
   const handleLike = async () => {
-    // If not authenticated, prompt to login (or just toggle locally for demo)
     if (!isAuthenticated) {
-      // For non-authenticated users, just toggle locally (optional: could redirect to login)
       setLiked(!liked);
       setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
       return;
     }
 
-    // Optimistic update for better UX
     const previousLiked = liked;
     const previousCount = likeCount;
     setLiked(!liked);
@@ -248,20 +254,16 @@ const ReadBlog = () => {
     try {
       const response = await blogAPI.likeBlog(blogId);
       if (response.data.success) {
-        // API call succeeded, state is already updated optimistically
-        // Optionally fetch the latest blog to get accurate count
         const blogResponse = await blogAPI.getById(blogId);
         if (blogResponse.data.success) {
           setLikeCount(blogResponse.data.blog.likesCount || 0);
         }
       } else {
-        // Revert on failure
         setLiked(previousLiked);
         setLikeCount(previousCount);
       }
     } catch (err) {
       console.error("Error toggling like:", err);
-      // Revert on error
       setLiked(previousLiked);
       setLikeCount(previousCount);
     }
@@ -301,7 +303,6 @@ const ReadBlog = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background font-body">
       <main className="flex-1 container mx-auto px-4 py-6">
-        {/* Back link */}
         <Link
           to="/"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
@@ -311,9 +312,7 @@ const ReadBlog = () => {
         </Link>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Blog Content */}
           <article className="flex-1 min-w-0">
-            {/* Hero Image - Front Pic - Displayed ABOVE the title */}
             {blog.frontPic && (
               <div className="w-full aspect-video mb-6 rounded-xl overflow-hidden">
                 <img
@@ -324,12 +323,10 @@ const ReadBlog = () => {
               </div>
             )}
 
-            {/* Title */}
             <h1 className="font-display text-3xl md:text-4xl lg:text-[2.75rem] font-bold leading-tight mb-4 text-foreground">
               {blog.title}
             </h1>
 
-            {/* Author row */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shadow-md">
@@ -361,7 +358,6 @@ const ReadBlog = () => {
               </button>
             </div>
 
-            {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-8">
               {blog.tags?.map((tag, i) => (
                 <Badge
@@ -379,16 +375,41 @@ const ReadBlog = () => {
               )}
             </div>
 
-            {/* Content - Render JSON as HTML */}
+            {/* CONDITIONAL RENDERING: Either show compiled sections OR fallback to raw blog.content */}
+            {/* 1. Render the Author's Main Content Unconditionally */}
             <div className="prose [&_img]:!w-full [&_img]:!max-h-[40vh] [&_img]:!object-contain [&_img]:!bg-gray-400 [&_img]:!rounded-md">
-              {contentHtml ? (
-                <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
-              ) : (
-                <p className="text-muted-foreground">No content available</p>
+              {mainContentHtml && (
+                <div dangerouslySetInnerHTML={{ __html: mainContentHtml }} />
               )}
             </div>
 
-            {/* Engagement bar */}
+            {/* 2. Render the Approved Sections Below the Main Content */}
+            {approvedSections.length > 0 && (
+              <div className="article-sections-container mt-10">
+                {approvedSections.map((section) => (
+                  <div key={section.sectionId} className="mb-10">
+                    <h2 className="text-2xl font-bold mb-4 text-foreground">
+                      {section.title}
+                    </h2>
+                    <div className="prose [&_img]:!w-full [&_img]:!max-h-[40vh] [&_img]:!object-contain [&_img]:!bg-gray-400 [&_img]:!rounded-md">
+                      {section.approvedContent ? (
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: generateRichTextHtml(
+                              section.approvedContent,
+                            ),
+                          }}
+                        />
+                      ) : (
+                        <p className="text-muted-foreground">
+                          No content available for this section
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-5 mt-10 pt-6 border-t border-border">
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Eye size={20} />
@@ -415,7 +436,7 @@ const ReadBlog = () => {
               </button>
             </div>
 
-            {/* Blog Sections - if sections exist */}
+            {/* Table of Contents / Status Board at the bottom */}
             {blog.sections && blog.sections.length > 0 && (
               <div className="mt-10 pt-6 border-t border-border">
                 <h3 className="font-display text-lg font-bold mb-4">
@@ -430,9 +451,9 @@ const ReadBlog = () => {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-foreground">
+                            <h2 className="text-sm font-semibold text-foreground">
                               {section.title || `Section ${idx + 1}`}
-                            </span>
+                            </h2>
                             <span className="text-xs px-2 py-1 rounded bg-primary/10 text-primary capitalize">
                               {section.status}
                             </span>
@@ -457,7 +478,6 @@ const ReadBlog = () => {
           {/* Sidebar */}
           <aside className="w-full lg:w-[400px] lg:flex-shrink-0">
             <div className="lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] flex flex-col bg-comment rounded-xl border border-border shadow-sm">
-              {/* Header */}
               <div className="p-4 border-b border-border flex items-center justify-between">
                 <h3 className="font-display text-lg font-bold">
                   Comments
@@ -467,7 +487,6 @@ const ReadBlog = () => {
                 </h3>
               </div>
 
-              {/* Scrollable comments */}
               <div
                 className="flex-1 overflow-y-auto p-4 space-y-5"
                 style={{ maxHeight: "calc(100vh - 240px)" }}
@@ -512,7 +531,6 @@ const ReadBlog = () => {
                 )}
               </div>
 
-              {/* Write comment */}
               <div className="p-4 border-t border-border">
                 {isAuthenticated ? (
                   <div className="flex flex-col gap-2">

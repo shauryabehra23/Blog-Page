@@ -162,7 +162,7 @@ export default function CollaboratorEditPage() {
 
           setSection(foundSection);
           setSectionContent({
-            content: foundSection.content || null,
+            content: foundSection.draftContent || foundSection.content || null,
           });
         }
       } catch (err) {
@@ -180,10 +180,11 @@ export default function CollaboratorEditPage() {
 
   // Load section content into editor when section is loaded
   useEffect(() => {
-    if (blogEditor && section && section.content) {
-      blogEditor.commands.setContent(section.content);
+    if (blogEditor && section) {
+      const contentToLoad = section.draftContent || section.content || {};
+      blogEditor.commands.setContent(contentToLoad);
     }
-  }, [section, blogEditor]);
+  }, [section]);
 
   const uploadImage = async (file) => {
     const formDataObj = new FormData();
@@ -332,8 +333,7 @@ export default function CollaboratorEditPage() {
 
     try {
       const response = await blogAPI.updateSectionContent(blogId, sectionId, {
-        content: finalContent,
-        status: "in-progress",
+        draftContent: finalContent,
       });
 
       if (response.data.success) {
@@ -422,7 +422,7 @@ export default function CollaboratorEditPage() {
 
     try {
       const response = await blogAPI.updateSectionContent(blogId, sectionId, {
-        content: finalContent,
+        draftContent: finalContent,
         status: "pending",
       });
 
@@ -543,6 +543,18 @@ export default function CollaboratorEditPage() {
             <ImageIcon size={18} />
           </button>
         </div>
+
+        {/* Feedback Banner */}
+        {section.feedback && section.feedback.trim() !== "" && (
+          <div className={`feedback-banner banner-${section.status}`}>
+            <h4 className="banner-header">
+              {section.status === "rejected"
+                ? "Changes Requested"
+                : "Approved with Notes"}
+            </h4>
+            <p className="banner-content">{section.feedback}</p>
+          </div>
+        )}
 
         {/* TipTap Editor */}
         <div className="editor-wrapper">
