@@ -1,5 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useContext } from "react";
+import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
 import HomePage from "./pages/Home/HomePage";
@@ -11,16 +10,10 @@ import ReadBlogPage from "./pages/ReadBlog/ReadBlogPage";
 import AcceptInvitePage from "./pages/AcceptInvite/AcceptInvitePage";
 import AuthorEditPage from "./pages/AuthorEdit/AuthorEditPage";
 import CollaboratorEditPage from "./pages/CollaboratorEdit/CollaboratorEditPage";
-import { AuthContext } from "./context/AuthContext";
+import { ProtectedRoute, AuthRoute } from "./components/ProtectedRoute";
 import "./App.css";
 
 function App() {
-  const { isAuthenticated, loading } = useContext(AuthContext);
-
-  if (loading) {
-    return <div>Loading...</div>; // Or a proper loading component
-  }
-
   return (
     <div className="app">
       <Navbar />
@@ -28,16 +21,18 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />}
+            element={
+              <ProtectedRoute component={<HomePage />} fallback="/login" />
+            }
           />
           <Route
             path="/login"
-            element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />}
+            element={<AuthRoute component={<LoginPage />} fallback="/" />}
           />
           <Route
             path="/profile"
             element={
-              isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />
+              <ProtectedRoute component={<ProfilePage />} fallback="/login" />
             }
           />
           <Route path="/profile/:userId" element={<ProfilePage />} />
@@ -47,23 +42,25 @@ function App() {
           <Route
             path="/add-blog"
             element={
-              isAuthenticated ? <AddBlogPage /> : <Navigate to="/login" />
+              <ProtectedRoute component={<AddBlogPage />} fallback="/login" />
             }
           />
           <Route
             path="/author-edit/:blogId"
             element={
-              isAuthenticated ? <AuthorEditPage /> : <Navigate to="/login" />
+              <ProtectedRoute
+                component={<AuthorEditPage />}
+                fallback="/login"
+              />
             }
           />
           <Route
             path="/collab-edit/:blogId/:sectionId"
             element={
-              isAuthenticated ? (
-                <CollaboratorEditPage />
-              ) : (
-                <Navigate to="/login" />
-              )
+              <ProtectedRoute
+                component={<CollaboratorEditPage />}
+                fallback="/login"
+              />
             }
           />
         </Routes>

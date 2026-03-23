@@ -1,12 +1,15 @@
 import { createContext, useState, useCallback, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
+import { isTokenValid, clearAuthData } from "../utils/tokenUtils";
 
 // Load initial state from localStorage
 const getInitialAuthState = () => {
   try {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
-    if (token && userData) {
+
+    // Validate token before setting authenticated state
+    if (token && userData && isTokenValid()) {
       const parsedUser = JSON.parse(userData);
       return {
         user: parsedUser,
@@ -14,10 +17,15 @@ const getInitialAuthState = () => {
         loading: false,
       };
     }
+
+    // Clear invalid token
+    if (token && !isTokenValid()) {
+      console.warn("Token expired or invalid. Clearing auth data.");
+      clearAuthData();
+    }
   } catch (error) {
     console.error("Error parsing user data from localStorage:", error);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearAuthData();
   }
   return {
     user: null,

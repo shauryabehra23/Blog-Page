@@ -338,9 +338,6 @@ export default function CollaboratorEditPage() {
 
       if (response.data.success) {
         setSuccessMessage("Draft saved successfully!");
-        setTimeout(() => {
-          navigate("/profile");
-        }, 1500);
       }
     } catch (err) {
       console.error("Error saving draft:", err);
@@ -428,9 +425,6 @@ export default function CollaboratorEditPage() {
 
       if (response.data.success) {
         setSuccessMessage("Approval request sent!");
-        setTimeout(() => {
-          navigate("/profile");
-        }, 1500);
       }
     } catch (err) {
       console.error("Error requesting approval:", err);
@@ -464,7 +458,7 @@ export default function CollaboratorEditPage() {
       <div className="collab-edit-header">
         <button
           className="btn-back"
-          onClick={() => navigate("/profile")}
+          onClick={() => window.history.back()}
           title="Back to Profile"
         >
           <ChevronLeft size={20} />

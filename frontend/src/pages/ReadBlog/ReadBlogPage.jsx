@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useContext } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { blogAPI, commentAPI } from "../../utils/api";
 import { AuthContext } from "../../context/AuthContext";
 import { generateHTML } from "@tiptap/html";
@@ -303,13 +303,14 @@ const ReadBlog = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background font-body">
       <main className="flex-1 container mx-auto px-4 py-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        <button
+          onClick={() => window.history.back()}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 bg-none border-none cursor-pointer p-0"
+          title="Back"
         >
           <ChevronLeft size={16} />
-          Back to feed
-        </Link>
+          Back
+        </button>
 
         <div className="flex flex-col lg:flex-row gap-8">
           <article className="flex-1 min-w-0">

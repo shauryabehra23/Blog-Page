@@ -443,9 +443,6 @@ export default function AuthorEditPage() {
 
       if (response.data.success) {
         setSuccessMessage("Blog saved as draft successfully!");
-        setTimeout(() => {
-          navigate("/profile");
-        }, 1500);
       }
     } catch (err) {
       console.error("Error saving draft:", err);
@@ -567,9 +564,6 @@ export default function AuthorEditPage() {
 
       if (response.data.success) {
         setSuccessMessage("Blog published successfully!");
-        setTimeout(() => {
-          navigate("/profile");
-        }, 1500);
       }
     } catch (err) {
       console.error("Error publishing blog:", err);
@@ -602,7 +596,7 @@ export default function AuthorEditPage() {
       <div className="author-edit-header">
         <button
           className="btn-back"
-          onClick={() => navigate("/profile")}
+          onClick={() => window.history.back()}
           title="Back to Profile"
         >
           <ChevronLeft size={20} />

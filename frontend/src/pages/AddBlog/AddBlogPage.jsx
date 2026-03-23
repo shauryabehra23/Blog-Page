@@ -420,9 +420,6 @@ export default function AddBlogPage() {
             ? "Blog published successfully!"
             : "Draft saved successfully!",
         );
-        setTimeout(() => {
-          navigate("/explore");
-        }, 1500);
 
         setFormData({
           title: "",
