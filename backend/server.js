@@ -51,16 +51,8 @@ const startServer = async () => {
 
     // ✅ SPA fallback: For any route not matching API routes, serve index.html
     // This allows React Router to handle client-side routing
-    app.get("*", (req, res) => {
+    app.get(/^(?!\/api\/).*/, (req, res) => {
       res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-    });
-
-    // ✅ 404 handler for undefined routes
-    app.use((req, res) => {
-      res.status(404).json({
-        success: false,
-        message: "Route not found",
-      });
     });
 
     // ✅ Global error handler
