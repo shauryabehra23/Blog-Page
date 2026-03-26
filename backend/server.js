@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const connect = require("./DB/db");
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
@@ -19,6 +20,8 @@ const startServer = async () => {
     app.use(
       cors({
         origin: [
+          "https://www.quillr.co.in",
+          "https://quillr.co.in",
           "https://quillr.vercel.app",
           "http://localhost:5173",
           "http://localhost:5174",
@@ -42,6 +45,15 @@ const startServer = async () => {
     app.use("/upload", uploadRoutes); // Only files (multer)
     app.use("/collaborator", collaboratorRoutes);
     app.use("/comments", commentRoutes); // Comment endpoints
+
+    // ✅ Serve static files from frontend build
+    app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+    // ✅ SPA fallback: For any route not matching API routes, serve index.html
+    // This allows React Router to handle client-side routing
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+    });
 
     // ✅ 404 handler for undefined routes
     app.use((req, res) => {

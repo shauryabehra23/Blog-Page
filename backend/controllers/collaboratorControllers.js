@@ -1,18 +1,32 @@
 const crypto = require("crypto");
+const axios = require("axios");
 const CollaboratorBlog = require("../models/Collaborator-Blog");
 const Blog = require("../models/Blog");
 const User = require("../models/User");
-const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// Brevo API helper function
+const sendBrevoEmail = async (emailData) => {
+  try {
+    const response = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      emailData,
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    console.log("[BREVO] ✅ Email sent. Message ID:", response.data.messageId);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "[BREVO] ❌ Email failed:",
+      error.response?.data || error.message,
+    );
+    throw error;
+  }
+};
 
 const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
   console.log(
@@ -33,12 +47,8 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
 
     const results = [];
 
-    // ✅ FIX: Using 'invite' as the iterator
     for (const invite of collabInvites) {
-      // Destructure everything we need from the object
       const { email: rawEmail, sectionId, sectionTitle, seqNo } = invite;
-
-      // Define 'email' clearly at the top of the loop
       const email = rawEmail?.trim() || "";
 
       console.log(`\n[COLLAB] >>> Processing invite for: ${email}`);
@@ -46,7 +56,6 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
         `  Section: "${sectionTitle}" (ID: ${sectionId}, Seq: ${seqNo})`,
       );
 
-      // 1. Validation Checks
       if (!email) {
         console.warn("[COLLAB] ⚠️  SKIP: Empty email");
         results.push({ email: "missing", status: "skipped_empty" });
@@ -59,7 +68,6 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
         continue;
       }
 
-      // 2. Check for existing invite
       const existing = await CollaboratorBlog.findOne({
         blog: blogId,
         collaboratorEmail: email,
@@ -75,7 +83,6 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
         continue;
       }
 
-      // 3. Find collaborator user by email (if exists) and Generate Token
       const collaboratorUser = await User.findOne({ email });
       console.log(
         "[COLLAB] Collaborator user lookup:",
@@ -90,7 +97,6 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
         sectionId,
         sectionTitle,
         seqNo,
-        // ✅ CORRECT: Store the AUTHOR's ID (who is inviting), not collaborator's ID
         user: blog.author._id,
         inviteToken,
         status: "pending",
@@ -99,26 +105,69 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
       await collab.save();
       console.log("[COLLAB] ✅ CollaboratorBlog entry created:", collab._id);
 
-      // 4. Send Email
       const acceptUrl = `${process.env.FRONTEND_URL}/accept-invite/${inviteToken}`;
 
       try {
-        console.log("[COLLAB] Sending email to:", email);
-        await transporter.sendMail({
-          from: `"Quillr Invites" <${process.env.EMAIL_USER}>`,
-          replyTo: blogOwner.email,
-          to: email, // Use 'email' here
+        console.log("[COLLAB] Sending HTTP email via Brevo to:", email);
+
+        const emailPayload = {
+          to: [{ email: email }],
+          from: {
+            email: process.env.EMAIL_USER || "noreply@quillrblog.com",
+            name: "Quill&Ray Blog",
+          },
+          replyTo: {
+            email: blogOwner.email,
+            name: blogOwner.name,
+          },
           subject: `Collaboration Invite: ${blog.title}`,
-          html: `
-            <div style="font-family: sans-serif; padding: 20px;">
-              <h2>Hello!</h2>
-              <p><strong>${blogOwner.name}</strong> invited you to edit the section: <strong>"${sectionTitle}"</strong></p>
-              <p>Blog Title: ${blog.title}</p>
-              <a href="${acceptUrl}" style="background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accept Invite</a>
+          htmlContent: `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px 8px 0 0; color: white;">
+              <h2 style="margin: 0; font-size: 24px;">You're Invited to Collaborate!</h2>
             </div>
+            
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+              <p style="font-size: 16px; color: #333; margin: 10px 0;">
+                Hi there! 👋
+              </p>
+              
+              <p style="font-size: 15px; color: #555; margin: 15px 0; line-height: 1.6;">
+                <strong>${blogOwner.name}</strong> has invited you to collaborate on editing the section:
+              </p>
+              
+              <div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 15px 0; border-radius: 4px;">
+                <p style="margin: 5px 0; color: #667eea; font-weight: 600;">Section:</p>
+                <p style="margin: 5px 0; font-size: 16px; color: #333;"><strong>"${sectionTitle}"</strong></p>
+                
+                <p style="margin: 10px 0; color: #667eea; font-weight: 600;">Blog:</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #555;">${blog.title}</p>
+              </div>
+              
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${acceptUrl}" 
+                   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                          color: white; 
+                          padding: 12px 30px; 
+                          text-decoration: none; 
+                          border-radius: 5px; 
+                          display: inline-block; 
+                          font-weight: 600;
+                          transition: opacity 0.3s ease;">
+                  Accept Invite
+                </a>
+              </div>
+              
+              <p style="font-size: 12px; color: #999; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                This invite link will expire in 30 days. If you have any questions, reply to this email.
+              </p>
+            </div>
+          </div>
           `,
-        });
-        console.log("[COLLAB] ✅ Email sent successfully to:", email);
+        };
+
+        await sendBrevoEmail(emailPayload);
+        console.log("[COLLAB] ✅ Email sent successfully via Brevo to:", email);
         results.push({ email, status: "sent", inviteId: collab._id });
       } catch (emailError) {
         console.error(
@@ -237,20 +286,63 @@ const sendInvite = async (req, res) => {
       const acceptUrl = `${process.env.FRONTEND_URL}/accept-invite/${inviteToken}`;
 
       try {
-        console.log(`[COLLAB API] Sending via Nodemailer to ${email}...`);
-        await transporter.sendMail({
-          // ✅ FIX 1: Send FROM your new app email
-          from: `"Quillr Invites" <${process.env.EMAIL_USER}>`,
-          // ✅ FIX 2: Replies go to the user who sent the invite
-          replyTo: blogOwner.email,
-          to: email,
+        console.log(`[COLLAB API] Sending HTTP email via Brevo to ${email}...`);
+
+        const emailPayload = {
+          to: [{ email: email }],
+          from: {
+            email: process.env.EMAIL_USER || "noreply@quillrblog.com",
+            name: "Quill&Ray Blog",
+          },
+          replyTo: {
+            email: blogOwner.email,
+            name: blogOwner.name,
+          },
           subject: `Collaboration Invite: ${blog.title}`,
-          html: `<p>Click <a href="${acceptUrl}">here</a> to accept</p>`,
-        });
-        console.log(`[COLLAB API] Successfully sent to ${email}`);
+          htmlContent: `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px 8px 0 0; color: white;">
+              <h2 style="margin: 0; font-size: 24px;">You're Invited to Collaborate!</h2>
+            </div>
+            
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+              <p style="font-size: 16px; color: #333; margin: 10px 0;">
+                Hi there! 👋
+              </p>
+              
+              <p style="font-size: 15px; color: #555; margin: 15px 0; line-height: 1.6;">
+                <strong>${blogOwner.name}</strong> has invited you to collaborate on editing the section:
+              </p>
+              
+              <div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 15px 0; border-radius: 4px;">
+                <p style="margin: 5px 0; color: #667eea; font-weight: 600;">Section:</p>
+                <p style="margin: 5px 0; font-size: 16px; color: #333;"><strong>"${blog.title}"</strong></p>
+              </div>
+              
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${acceptUrl}" 
+                   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                          color: white; 
+                          padding: 12px 30px; 
+                          text-decoration: none; 
+                          border-radius: 5px; 
+                          display: inline-block; 
+                          font-weight: 600;">
+                  Accept Invite
+                </a>
+              </div>
+            </div>
+          </div>
+          `,
+        };
+
+        await sendBrevoEmail(emailPayload);
+        console.log(
+          `[COLLAB API] Successfully sent HTTP email via Brevo to ${email}`,
+        );
         results.push({ email, status: "sent", inviteId: collab._id });
       } catch (emailError) {
-        console.error("[COLLAB API] Nodemailer failed for", email, emailError);
+        console.error("[COLLAB API] Brevo failed for", email, emailError);
         results.push({
           email,
           status: "email_failed",
@@ -323,7 +415,6 @@ const acceptInvite = async (req, res) => {
 };
 
 const getBlogCollaborators = async (req, res) => {
-  // Keeping this brief to focus on the creation flow
   try {
     const { blogId } = req.params;
     const collaborators = await CollaboratorBlog.find({
