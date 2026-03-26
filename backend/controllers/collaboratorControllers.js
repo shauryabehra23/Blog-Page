@@ -112,7 +112,7 @@ const sendCollaborationInvites = async (blogId, collabInvites, blogOwner) => {
 
         const emailPayload = {
           to: [{ email: email }],
-          from: {
+          sender: {
             email: process.env.EMAIL_USER || "noreply@quillrblog.com",
             name: "Quill&Ray Blog",
           },
@@ -290,7 +290,7 @@ const sendInvite = async (req, res) => {
 
         const emailPayload = {
           to: [{ email: email }],
-          from: {
+          sender: {
             email: process.env.EMAIL_USER || "noreply@quillrblog.com",
             name: "Quill&Ray Blog",
           },
