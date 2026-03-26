@@ -46,8 +46,8 @@ const startServer = async () => {
     app.use("/collaborator", collaboratorRoutes);
     app.use("/comments", commentRoutes); // Comment endpoints
 
-    // ✅ 404 handler for undefined API routes
-    app.use((req, res) => {
+    // ✅ 404 handler for undefined API routes (catch-all using regex)
+    app.all(/.*/, (req, res) => {
       res.status(404).json({
         success: false,
         message: "API endpoint not found",
