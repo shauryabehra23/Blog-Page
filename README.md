@@ -474,7 +474,7 @@ This project is open source and available under the MIT License.
 
 **Shaurya Behra**
 
-- GitHub: [@shaurya-behra](https://github.com/shaurya-behra)
+- GitHub: https://github.com/shauryabehra23
 
 ---
 
