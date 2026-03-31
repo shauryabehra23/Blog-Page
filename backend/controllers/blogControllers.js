@@ -419,7 +419,10 @@ const seedBlogs = async (req, res) => {
       await demoUser.save();
     }
 
-    // Sample blogs data - using TipTap JSON format (as objects, not strings)
+    // Clear existing blogs
+    await Blog.deleteMany({});
+
+    // 30+ Interesting Sample Blogs - Published Status
     const sampleBlogs = [
       {
         author: demoUser._id,
@@ -441,22 +444,13 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "In this guide, we'll explore the useState hook and see how it can simplify your code.",
-                },
-              ],
-            },
           ],
         },
-        contentImages: [], // Will be populated if there were images
         category: "technology",
         tags: ["react", "javascript", "hooks"],
-        likesCount: 145,
-        views: 892,
+        status: "published",
+        likesCount: 245,
+        views: 1892,
       },
       {
         author: demoUser._id,
@@ -478,22 +472,13 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "This article explores principles of minimalist design and how to apply them to your projects.",
-                },
-              ],
-            },
           ],
         },
-        contentImages: [],
         category: "design",
-        tags: ["design", "web", "ux"],
-        likesCount: 203,
-        views: 1250,
+        tags: ["design", "web", "ux", "ui"],
+        status: "published",
+        likesCount: 403,
+        views: 2250,
       },
       {
         author: demoUser._id,
@@ -517,22 +502,13 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "Topics include error handling, logging, security, and performance optimization.",
-                },
-              ],
-            },
           ],
         },
-        contentImages: [],
         category: "technology",
-        tags: ["nodejs", "backend", "javascript"],
-        likesCount: 178,
-        views: 756,
+        tags: ["nodejs", "backend", "javascript", "server"],
+        status: "published",
+        likesCount: 378,
+        views: 1756,
       },
       {
         author: demoUser._id,
@@ -556,22 +532,13 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "Join me as I share my experiences traveling through Tokyo, Kyoto, and beyond.",
-                },
-              ],
-            },
           ],
         },
-        contentImages: [],
         category: "travel",
-        tags: ["japan", "adventure", "travel"],
-        likesCount: 267,
-        views: 1890,
+        tags: ["japan", "adventure", "travel", "asia"],
+        status: "published",
+        likesCount: 567,
+        views: 3890,
       },
       {
         author: demoUser._id,
@@ -593,22 +560,13 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "This comprehensive guide covers everything from basic concepts to advanced techniques.",
-                },
-              ],
-            },
           ],
         },
-        contentImages: [],
         category: "technology",
-        tags: ["css", "web", "frontend"],
-        likesCount: 198,
-        views: 945,
+        tags: ["css", "web", "frontend", "layout"],
+        status: "published",
+        likesCount: 298,
+        views: 1945,
       },
       {
         author: demoUser._id,
@@ -630,22 +588,13 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "In this article, we explore emerging technologies and what they mean for web developers.",
-                },
-              ],
-            },
           ],
         },
-        contentImages: [],
         category: "technology",
-        tags: ["ai", "web", "future"],
-        likesCount: 312,
-        views: 2100,
+        tags: ["ai", "web", "future", "innovation"],
+        status: "published",
+        likesCount: 512,
+        views: 4100,
       },
       {
         author: demoUser._id,
@@ -667,22 +616,13 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "This guide covers data cleaning, visualization, and statistical analysis techniques.",
-                },
-              ],
-            },
           ],
         },
-        contentImages: [],
         category: "programming",
-        tags: ["python", "data", "analysis"],
-        likesCount: 256,
-        views: 1678,
+        tags: ["python", "data", "analysis", "science"],
+        status: "published",
+        likesCount: 456,
+        views: 2678,
       },
       {
         author: demoUser._id,
@@ -706,22 +646,13 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "We'll cover navigation, state management, and deployment best practices.",
-                },
-              ],
-            },
           ],
         },
-        contentImages: [],
         category: "technology",
-        tags: ["react-native", "mobile", "javascript"],
-        likesCount: 289,
-        views: 1567,
+        tags: ["react-native", "mobile", "javascript", "app"],
+        status: "published",
+        likesCount: 389,
+        views: 2567,
       },
       {
         author: demoUser._id,
@@ -745,27 +676,718 @@ const seedBlogs = async (req, res) => {
                 },
               ],
             },
+          ],
+        },
+        category: "lifestyle",
+        tags: ["productivity", "remote", "work", "tips"],
+        status: "published",
+        likesCount: 380,
+        views: 1892,
+      },
+      {
+        author: demoUser._id,
+        title: "TypeScript: Type Safety in JavaScript",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Why TypeScript Matters" }],
+            },
             {
               type: "paragraph",
               content: [
                 {
                   type: "text",
-                  text: "Topics include time management, workspace setup, and maintaining work-life balance.",
+                  text: "TypeScript brings static typing to JavaScript, helping you catch errors early and write more maintainable code. Explore its benefits and practical applications.",
                 },
               ],
             },
           ],
         },
-        contentImages: [],
+        category: "technology",
+        tags: ["typescript", "javascript", "programming", "types"],
+        status: "published",
+        likesCount: 434,
+        views: 2134,
+      },
+      {
+        author: demoUser._id,
+        title: "Sustainable Living: How to Reduce Your Carbon Footprint",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Small Changes, Big Impact" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Making your lifestyle more sustainable doesn't require drastic changes. Learn practical ways to reduce your environmental impact.",
+                },
+              ],
+            },
+          ],
+        },
         category: "lifestyle",
-        tags: ["productivity", "remote", "work"],
-        likesCount: 180,
-        views: 892,
+        tags: ["sustainability", "environment", "eco-friendly", "green"],
+        status: "published",
+        likesCount: 523,
+        views: 3456,
+      },
+      {
+        author: demoUser._id,
+        title: "Docker Containerization: A Beginner's Guide",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Simplifying Application Deployment" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Docker revolutionizes how we deploy applications. Learn the basics of containerization and how it can improve your development workflow.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "technology",
+        tags: ["docker", "devops", "containers", "deployment"],
+        status: "published",
+        likesCount: 367,
+        views: 1823,
+      },
+      {
+        author: demoUser._id,
+        title: "The Psychology of User Experience Design",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Understanding User Behavior" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Good UX design is rooted in psychology. Understanding how users think and behave leads to better design decisions.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "design",
+        tags: ["ux", "psychology", "design", "user-research"],
+        status: "published",
+        likesCount: 445,
+        views: 2789,
+      },
+      {
+        author: demoUser._id,
+        title: "Food Photography: Capturing Culinary Art",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Making Food Look Delicious" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Food photography is an art form that requires technique and creativity. Learn how to make your dishes look irresistible on camera.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "lifestyle",
+        tags: ["photography", "food", "art", "creative"],
+        status: "published",
+        likesCount: 489,
+        views: 3123,
+      },
+      {
+        author: demoUser._id,
+        title: "Machine Learning Fundamentals",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Getting Started with ML" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Machine learning is transforming technology. Explore the fundamental concepts and start your ML journey with real-world examples.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "technology",
+        tags: ["machine-learning", "ai", "python", "data"],
+        status: "published",
+        likesCount: 567,
+        views: 3890,
+      },
+      {
+        author: demoUser._id,
+        title: "The Art of Storytelling in Content Marketing",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Compelling Narratives That Convert" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Great marketing isn't about selling; it's about telling stories that resonate. Learn how to craft narratives that engage your audience.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "business",
+        tags: ["marketing", "content", "storytelling", "business"],
+        status: "published",
+        likesCount: 412,
+        views: 2456,
+      },
+      {
+        author: demoUser._id,
+        title: "Yoga and Mental Health: Finding Inner Peace",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Holistic Wellness Through Yoga" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Yoga is more than physical exercise; it's a path to mental clarity and emotional balance. Discover how yoga can transform your well-being.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "wellness",
+        tags: ["yoga", "health", "meditation", "wellness"],
+        status: "published",
+        likesCount: 534,
+        views: 3567,
+      },
+      {
+        author: demoUser._id,
+        title: "GraphQL vs REST: Which Should You Use?",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "API Architecture Comparison" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Both GraphQL and REST have their strengths. Learn the differences and when to use each approach for optimal API design.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "technology",
+        tags: ["graphql", "rest", "api", "backend"],
+        status: "published",
+        likesCount: 398,
+        views: 2234,
+      },
+      {
+        author: demoUser._id,
+        title: "Travel on a Budget: Europe's Best Hidden Gems",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Affordable European Adventures" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Europe has amazing travel destinations that won't break the bank. Explore lesser-known places that offer authentic experiences.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "travel",
+        tags: ["europe", "budget-travel", "adventure", "tips"],
+        status: "published",
+        likesCount: 478,
+        views: 3234,
+      },
+      {
+        author: demoUser._id,
+        title: "Web Security Best Practices",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Protecting Your Applications" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Security breaches are costly and damaging. Learn essential practices to protect your web applications from common vulnerabilities.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "technology",
+        tags: ["security", "web", "ssl", "best-practices"],
+        status: "published",
+        likesCount: 523,
+        views: 2945,
+      },
+      {
+        author: demoUser._id,
+        title: "The Future of Freelancing",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                {
+                  type: "text",
+                  text: "Building a Successful Freelance Career",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Freelancing offers freedom and flexibility. Discover strategies to build a sustainable and profitable freelance business.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "business",
+        tags: ["freelance", "career", "business", "entrepreneurship"],
+        status: "published",
+        likesCount: 401,
+        views: 2123,
+      },
+      {
+        author: demoUser._id,
+        title: "Introduction to Kubernetes",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Container Orchestration Simplified" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Kubernetes is the industry standard for managing containerized applications. Learn the basics and start orchestrating your containers.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "technology",
+        tags: ["kubernetes", "devops", "containers", "orchestration"],
+        status: "published",
+        likesCount: 445,
+        views: 2678,
+      },
+      {
+        author: demoUser._id,
+        title: "Personal Finance: Building Wealth",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Smart Money Management" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Financial stability requires planning and discipline. Learn proven strategies to build wealth and secure your financial future.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "business",
+        tags: ["finance", "money", "investing", "wealth"],
+        status: "published",
+        likesCount: 567,
+        views: 3789,
+      },
+      {
+        author: demoUser._id,
+        title: "The Complete Guide to SEO",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Ranking Higher in Search Results" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "SEO is crucial for online visibility. Master the techniques and strategies that will help your content rank higher.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "business",
+        tags: ["seo", "marketing", "search", "optimization"],
+        status: "published",
+        likesCount: 489,
+        views: 3412,
+      },
+      {
+        author: demoUser._id,
+        title: "Photography: Mastering Composition",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Creating Visually Stunning Images" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Great photography is about composition and light. Learn the fundamentals of framing that will elevate your photography.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "lifestyle",
+        tags: ["photography", "composition", "art", "creative"],
+        status: "published",
+        likesCount: 412,
+        views: 2567,
+      },
+      {
+        author: demoUser._id,
+        title: "Fitness Journey: Building Muscle",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Your Complete Muscle-Building Guide" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Building muscle requires consistent training and proper nutrition. Learn the science behind muscle growth and proven methods.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "wellness",
+        tags: ["fitness", "workout", "health", "muscle"],
+        status: "published",
+        likesCount: 534,
+        views: 3123,
+      },
+      {
+        author: demoUser._id,
+        title: "Blockchain Technology Explained",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Understanding Distributed Ledgers" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Blockchain is more than cryptocurrency. Discover how this revolutionary technology is changing industries.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "technology",
+        tags: ["blockchain", "crypto", "technology", "innovation"],
+        status: "published",
+        likesCount: 456,
+        views: 2891,
+      },
+      {
+        author: demoUser._id,
+        title: "Learning Languages: Immersion Methods",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Speaking Fluent in Weeks" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Language learning doesn't have to be boring. Discover immersive techniques that accelerate your language acquisition.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "education",
+        tags: ["language", "learning", "education", "immersion"],
+        status: "published",
+        likesCount: 378,
+        views: 2345,
+      },
+      {
+        author: demoUser._id,
+        title: "Real Estate Investment: Getting Started",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Building Your Real Estate Portfolio" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Real estate investment offers long-term wealth creation. Learn the fundamentals to start your real estate investment journey.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "business",
+        tags: ["real-estate", "investment", "property", "business"],
+        status: "published",
+        likesCount: 423,
+        views: 2678,
+      },
+      {
+        author: demoUser._id,
+        title: "Digital Art: Procreate Masterclass",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Creating Professional Digital Art" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Procreate is a powerful tool for digital artists. Master the techniques to create stunning digital artwork.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "design",
+        tags: ["digital-art", "procreate", "design", "creative"],
+        status: "published",
+        likesCount: 467,
+        views: 2945,
+      },
+      {
+        author: demoUser._id,
+        title: "Career Transition: Following Your Passion",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Making Bold Career Changes" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Career transitions can be scary but rewarding. Learn strategies to successfully pivot to your dream career.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "lifestyle",
+        tags: ["career", "passion", "change", "growth"],
+        status: "published",
+        likesCount: 501,
+        views: 3234,
+      },
+      {
+        author: demoUser._id,
+        title: "Vue.js: Progressive Web Framework",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Building Interactive Web Apps" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Vue.js is a powerful and approachable framework. Learn how to build modern web applications with Vue.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "technology",
+        tags: ["vue", "javascript", "frontend", "web"],
+        status: "published",
+        likesCount: 388,
+        views: 2123,
+      },
+      {
+        author: demoUser._id,
+        title: "Meditation for Beginners",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Finding Peace in a Busy World" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Meditation is a simple yet powerful practice. Start your meditation journey with practical techniques for beginners.",
+                },
+              ],
+            },
+          ],
+        },
+        category: "wellness",
+        tags: ["meditation", "mindfulness", "wellness", "mental-health"],
+        status: "published",
+        likesCount: 512,
+        views: 3567,
       },
     ];
-
-    // Clear existing blogs (optional - comment out if you want to keep existing data)
-    // await Blog.deleteMany({});
 
     // Insert sample blogs
     const createdBlogs = await Blog.insertMany(sampleBlogs);
@@ -774,6 +1396,11 @@ const seedBlogs = async (req, res) => {
       success: true,
       message: `Successfully seeded ${createdBlogs.length} sample blogs`,
       count: createdBlogs.length,
+      blogs: createdBlogs.map((b) => ({
+        id: b._id,
+        title: b.title,
+        category: b.category,
+      })),
     });
   } catch (error) {
     console.error("Error seeding blogs:", error);

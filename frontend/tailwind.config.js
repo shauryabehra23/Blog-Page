@@ -13,7 +13,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['"Lobster Two"', "sans-serif"],
+        display: ['"Lora"', "serif"],
         body: ['"Lora"', "serif"],
       },
       colors: {
