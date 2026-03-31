@@ -1,12 +1,15 @@
-# Quill & Ray Blog Platform
+# Quillr Blog Platform
 
 A full-stack blog application built with **React** (Frontend) and **Node.js/Express** (Backend), featuring collaborative editing, user authentication, and rich content management with **Cloudinary** integration.
+
+Access through:
+[http://quillr.co.in](https://www.quillr.co.in/)
 
 ---
 
 ## 🎯 Project Overview
 
-Quill & Ray is a modern blogging platform that enables users to create, read, edit, and collaborate on blog posts. The platform supports role-based access control, allowing blog authors to invite collaborators to edit specific sections of their blogs.
+Quillr is a modern blogging platform that enables users to create, read, edit, and collaborate on blog posts. The platform supports role-based access control, allowing blog authors to invite collaborators to edit specific sections of their blogs.
 
 **Key Features:**
 
@@ -471,7 +474,7 @@ This project is open source and available under the MIT License.
 
 **Shaurya Behra**
 
-- GitHub: [@shaurya-behra](https://github.com/shaurya-behra)
+- GitHub: https://github.com/shauryabehra23
 
 ---
 
