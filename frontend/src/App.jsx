@@ -19,12 +19,7 @@ function App() {
       <Navbar />
       <main className="app-main">
         <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute component={<HomePage />} fallback="/login" />
-            }
-          />
+          <Route path="/" element={<HomePage />} />
           <Route
             path="/login"
             element={<AuthRoute component={<LoginPage />} fallback="/" />}

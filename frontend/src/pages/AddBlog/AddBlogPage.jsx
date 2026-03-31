@@ -737,7 +737,7 @@ export default function AddBlogPage() {
               {sections.map((section, index) => (
                 <div
                   key={section.sectionId}
-                  className="flex gap-3 p-3 border rounded-lg bg-gray-50"
+                  className="flex flex-col sm:flex-row gap-3 p-3 border rounded-lg bg-gray-50"
                 >
                   <input
                     className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
@@ -754,7 +754,7 @@ export default function AddBlogPage() {
                     disabled={isLoading}
                   />
                   <input
-                    className="w-32 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 text-xs"
+                    className="w-full sm:w-32 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 text-xs"
                     value={section.collaboratorEmail || ""}
                     onChange={(e) => {
                       const value = e.target.value.trim();

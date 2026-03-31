@@ -12,6 +12,7 @@ const {
   approveSectionContent,
   rejectSectionContent,
   saveMasterContent,
+  deleteAllBlogs,
   seedBlogs,
   toggleLike,
   getLikeStatus,
@@ -33,6 +34,9 @@ app.get("/explore", getNextBlogs);
 
 // Seed sample blogs (requires authentication - for admin use only)
 app.get("/seed", tokenAuthMw, seedBlogs);
+
+// ⚠️ TEMPORARY: Delete all blogs (for testing - requires authentication)
+app.delete("/debug/delete-all", tokenAuthMw, deleteAllBlogs);
 
 // ✅ DEBUG: Check all blogs in database
 app.get("/debug/all-blogs", async (req, res) => {

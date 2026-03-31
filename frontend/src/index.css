@@ -44,9 +44,7 @@ All colors MUST be HSL.
   }
 }
 
-@import url("https://fonts.googleapis.com/css2?family=Lobster+Two:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
-
-/* Lobster Two CSS classes */
+/* Lobster Two CSS classes (Headings/Logo) */
 .lobster-two-regular {
   font-family: "Lobster Two", sans-serif;
   font-weight: 400;
@@ -71,63 +69,51 @@ All colors MUST be HSL.
   font-style: italic;
 }
 
-/* Zilla Slab CSS classes */
-.zilla-slab-light {
-  font-family: "Zilla Slab", serif;
-  font-weight: 300;
-  font-style: normal;
-}
-
-.zilla-slab-regular {
-  font-family: "Zilla Slab", serif;
+/* Lora CSS classes (Body) */
+.lora-regular {
+  font-family: "Lora", serif;
   font-weight: 400;
   font-style: normal;
 }
 
-.zilla-slab-medium {
-  font-family: "Zilla Slab", serif;
+.lora-medium {
+  font-family: "Lora", serif;
   font-weight: 500;
   font-style: normal;
 }
 
-.zilla-slab-semibold {
-  font-family: "Zilla Slab", serif;
+.lora-semibold {
+  font-family: "Lora", serif;
   font-weight: 600;
   font-style: normal;
 }
 
-.zilla-slab-bold {
-  font-family: "Zilla Slab", serif;
+.lora-bold {
+  font-family: "Lora", serif;
   font-weight: 700;
   font-style: normal;
 }
 
-.zilla-slab-light-italic {
-  font-family: "Zilla Slab", serif;
-  font-weight: 300;
-  font-style: italic;
-}
-
-.zilla-slab-regular-italic {
-  font-family: "Zilla Slab", serif;
+.lora-regular-italic {
+  font-family: "Lora", serif;
   font-weight: 400;
   font-style: italic;
 }
 
-.zilla-slab-medium-italic {
-  font-family: "Zilla Slab", serif;
+.lora-medium-italic {
+  font-family: "Lora", serif;
   font-weight: 500;
   font-style: italic;
 }
 
-.zilla-slab-semibold-italic {
-  font-family: "Zilla Slab", serif;
+.lora-semibold-italic {
+  font-family: "Lora", serif;
   font-weight: 600;
   font-style: italic;
 }
 
-.zilla-slab-bold-italic {
-  font-family: "Zilla Slab", serif;
+.lora-bold-italic {
+  font-family: "Lora", serif;
   font-weight: 700;
   font-style: italic;
 }

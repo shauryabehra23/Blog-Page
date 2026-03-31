@@ -385,6 +385,27 @@ const getLikeStatus = async (req, res) => {
 };
 
 // Seed sample blogs (for testing) - FIXED to use proper format
+// ⚠️ TEMPORARY: Delete all blogs (admin use only)
+const deleteAllBlogs = async (req, res) => {
+  try {
+    const result = await Blog.deleteMany({});
+    console.log(`[DEBUG] Deleted ${result.deletedCount} blogs`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} blogs`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error deleting blogs:", error);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to delete blogs",
+      error: error.message,
+    });
+  }
+};
+
 const seedBlogs = async (req, res) => {
   try {
     // First, check and create a demo user if it doesn't exist
@@ -588,6 +609,158 @@ const seedBlogs = async (req, res) => {
         tags: ["css", "web", "frontend"],
         likesCount: 198,
         views: 945,
+      },
+      {
+        author: demoUser._id,
+        title: "The Future of Web Development",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "AI and Web Technologies" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Artificial intelligence is reshaping how we build web applications. From automated testing to intelligent design systems, AI is everywhere.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "In this article, we explore emerging technologies and what they mean for web developers.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [],
+        category: "technology",
+        tags: ["ai", "web", "future"],
+        likesCount: 312,
+        views: 2100,
+      },
+      {
+        author: demoUser._id,
+        title: "Python for Data Science",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Data Analysis with Python" }],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Python has become the go-to language for data science. Learn how to use pandas, numpy, and matplotlib for powerful data analysis.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "This guide covers data cleaning, visualization, and statistical analysis techniques.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [],
+        category: "programming",
+        tags: ["python", "data", "analysis"],
+        likesCount: 256,
+        views: 1678,
+      },
+      {
+        author: demoUser._id,
+        title: "Building Mobile Apps with React Native",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Cross-Platform Mobile Development" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "React Native allows you to build mobile apps using JavaScript. Learn how to create iOS and Android apps from a single codebase.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "We'll cover navigation, state management, and deployment best practices.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [],
+        category: "technology",
+        tags: ["react-native", "mobile", "javascript"],
+        likesCount: 289,
+        views: 1567,
+      },
+      {
+        author: demoUser._id,
+        title: "Productivity Tips for Remote Workers",
+        content: {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [
+                { type: "text", text: "Working From Home Effectively" },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Remote work has become the new normal. Here are practical tips to maximize your productivity while working from home.",
+                },
+              ],
+            },
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Topics include time management, workspace setup, and maintaining work-life balance.",
+                },
+              ],
+            },
+          ],
+        },
+        contentImages: [],
+        category: "lifestyle",
+        tags: ["productivity", "remote", "work"],
+        likesCount: 180,
+        views: 892,
       },
     ];
 
@@ -823,15 +996,18 @@ const getUserCollaboratingBlogs = async (req, res) => {
     );
 
     // Extract unique blogs and map collaboration details
-    const blogsWithCollabInfo = collaborations.map((collab) => ({
-      ...collab.blog.toObject(),
-      mySection: {
-        sectionId: collab.sectionId,
-        sectionTitle: collab.sectionTitle,
-        seqNo: collab.seqNo,
-        status: collab.status,
-      },
-    }));
+    // Filter out null blogs (deleted blogs) and map remaining collaborations
+    const blogsWithCollabInfo = collaborations
+      .filter((collab) => collab.blog !== null)
+      .map((collab) => ({
+        ...collab.blog.toObject(),
+        mySection: {
+          sectionId: collab.sectionId,
+          sectionTitle: collab.sectionTitle,
+          seqNo: collab.seqNo,
+          status: collab.status,
+        },
+      }));
 
     return res.status(200).json({
       success: true,
@@ -1447,6 +1623,7 @@ module.exports = {
   approveSectionContent,
   rejectSectionContent,
   saveMasterContent,
+  deleteAllBlogs,
   seedBlogs,
   toggleLike,
   getLikeStatus,

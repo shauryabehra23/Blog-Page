@@ -13,8 +13,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['"Zilla Slab"', "serif"],
-        body: ['"Zilla Slab"', "serif"],
+        display: ['"Lobster Two"', "sans-serif"],
+        body: ['"Lora"', "serif"],
       },
       colors: {
         border: "hsl(var(--border))",

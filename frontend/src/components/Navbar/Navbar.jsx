@@ -1,10 +1,29 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { Pen, User } from "lucide-react";
 
 const Navbar = () => {
   const { isAuthenticated, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleWriteClick = (e) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      navigate("/login");
+    } else {
+      navigate("/add-blog");
+    }
+  };
+
+  const handleProfileClick = (e) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      navigate("/login");
+    } else {
+      navigate("/profile");
+    }
+  };
 
   return (
     <nav className="bg-nav text-nav-foreground sticky top-0 z-50 border-b border-border/40 backdrop-blur">
@@ -26,32 +45,28 @@ const Navbar = () => {
             Explore
           </Link>
 
-          {isAuthenticated && (
-            <Link
-              to="/add-blog"
-              className="flex items-center gap-1.5 font-body text-sm hover:text-primary transition-colors"
-            >
-              <Pen size={17} />
-              {/* Optional: Hide text "Write" on very small screens to save space */}
-              <span className="hidden sm:inline">Write</span>
-            </Link>
-          )}
+          <button
+            onClick={handleWriteClick}
+            className="flex items-center gap-1.5 font-body text-sm hover:text-primary transition-colors cursor-pointer"
+          >
+            <Pen size={17} />
+            <span className="hidden sm:inline">Write</span>
+          </button>
+
+          <button
+            onClick={handleProfileClick}
+            className="hover:text-primary transition-colors flex items-center cursor-pointer"
+          >
+            <User size={20} />
+          </button>
 
           {isAuthenticated ? (
-            <>
-              <Link
-                to="/profile"
-                className="hover:text-primary transition-colors flex items-center"
-              >
-                <User size={20} />
-              </Link>
-              <button
-                onClick={logout}
-                className="font-body text-sm hover:text-primary transition-colors"
-              >
-                Logout
-              </button>
-            </>
+            <button
+              onClick={logout}
+              className="font-body text-sm hover:text-primary transition-colors cursor-pointer"
+            >
+              Logout
+            </button>
           ) : (
             <Link
               to="/login"

@@ -37,7 +37,7 @@ export default function Index() {
           className="absolute inset-0 w-full h-full object-cover "
           style={{ animation: "float 8s ease-in-out infinite" }}
         />
-        <div className="absolute inset-0 bg-[hsl(var(--hero-overlay)/0.7)]" />
+        <div className="absolute inset-0 bg-black/50" />
 
         <div
           className="relative z-10 text-center px-6 max-w-3xl mx-auto"
@@ -51,7 +51,7 @@ export default function Index() {
           <h1 className="text-5xl sm:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
             <span className="text-[hsl(210_40%_98%)]">Stories that</span>
             <br />
-            <span className="text-gradient-gold">Inspire</span>
+            <span className="text-[hsl(210_40%_98%)]">Inspire</span>
           </h1>
 
           <p className="text-lg text-[hsl(210_40%_98%/0.7)] max-w-xl mx-auto mb-10 leading-relaxed font-light">
