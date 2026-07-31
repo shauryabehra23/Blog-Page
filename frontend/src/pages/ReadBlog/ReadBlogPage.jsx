@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useContext } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { blogAPI, commentAPI } from "../../utils/api";
 import { AuthContext } from "../../context/AuthContext";
 import { generateHTML } from "@tiptap/html";
